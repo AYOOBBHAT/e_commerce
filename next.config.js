@@ -1,14 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // output: 'export', // Disabled to allow API routes and dynamic features
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
   optimizeFonts: false,
-  experimental: {
-    optimizeFonts: false,
-  },
   webpack: (config) => {
     config.cache = false;
     return config;

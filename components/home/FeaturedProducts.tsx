@@ -1,46 +1,34 @@
+'use client';
+
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import ProductGrid from '@/components/product/ProductGrid';
 import { Button } from '@/components/ui/button';
-
-// Mock featured products
-const featuredProducts = [
-  {
-    id: '1',
-    slug: 'premium-headphones',
-    name: 'Premium Wireless Headphones',
-    price: 149.99,
-    comparePrice: 199.99,
-    image: 'https://images.pexels.com/photos/3394665/pexels-photo-3394665.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-    category: 'Electronics',
-    featured: true,
-  },
-  {
-    id: '2',
-    slug: 'smartwatch-series-5',
-    name: 'Smartwatch Series 5',
-    price: 299.99,
-    comparePrice: 349.99,
-    image: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-    category: 'Electronics',
-    featured: true,
-  },
-  {
-    id: '3',
-    slug: 'premium-leather-backpack',
-    name: 'Premium Leather Backpack',
-    price: 79.99,
-    comparePrice: 99.99,
-    image: 'https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-    category: 'Fashion',
-    featured: true,
-  },
-];
+import { useEffect, useState } from 'react';
 
 export default function FeaturedProducts() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/admin/products');
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data = await res.json();
+        setProducts(data.filter((p: any) => p.featured));
+      } catch (err: any) {
+        setError(err.message || 'Error fetching products');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   return (
     <section className="py-12 md:py-16">
       <div className="container px-4 mx-auto">
@@ -56,8 +44,13 @@ export default function FeaturedProducts() {
             </Button>
           </Link>
         </div>
-        
-        <ProductGrid products={featuredProducts} />
+        {loading ? (
+          <div className="p-6 text-center">Loading products...</div>
+        ) : error ? (
+          <div className="p-6 text-center text-destructive">{error}</div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
       </div>
     </section>
   );

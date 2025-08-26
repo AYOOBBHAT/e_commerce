@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Edit, MoreHorizontal, Trash } from 'lucide-react';
@@ -21,55 +21,41 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
-// Mock data - replace with real data from your API
-const products = [
-  {
-    id: '1',
-    name: 'Premium Wireless Headphones',
-    price: 149.99,
-    category: 'Electronics',
-    inStock: true,
-    quantity: 50,
-    image: 'https://images.pexels.com/photos/3394665/pexels-photo-3394665.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-  },
-  {
-    id: '2',
-    name: 'Smartwatch Series 5',
-    price: 299.99,
-    category: 'Electronics',
-    inStock: true,
-    quantity: 25,
-    image: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-  },
-  {
-    id: '3',
-    name: 'Premium Leather Backpack',
-    price: 79.99,
-    category: 'Fashion',
-    inStock: false,
-    quantity: 0,
-    image: 'https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-  },
-];
-
 export default function ProductsTable() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/admin/products');
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (err: any) {
+        setError(err.message || 'Error fetching products');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleDelete = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
         throw new Error('Failed to delete product');
       }
-
-      // Refresh the products list
-      window.location.reload();
+      setProducts((prev) => prev.filter((p) => p._id !== productId && p.id !== productId));
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Failed to delete product');
@@ -77,6 +63,9 @@ export default function ProductsTable() {
       setIsDeleting(false);
     }
   };
+
+  if (loading) return <div className="p-6 text-center">Loading products...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">{error}</div>;
 
   return (
     <div className="rounded-md border">
@@ -93,12 +82,12 @@ export default function ProductsTable() {
         </TableHeader>
         <TableBody>
           {products.map((product) => (
-            <TableRow key={product.id}>
+            <TableRow key={product._id || product.id}>
               <TableCell>
                 <div className="flex items-center gap-4">
                   <div className="relative h-16 w-16 overflow-hidden rounded">
                     <Image
-                      src={product.image}
+                      src={product.images?.[0] || product.image || '/placeholder.png'}
                       alt={product.name}
                       fill
                       className="object-cover"
@@ -108,13 +97,13 @@ export default function ProductsTable() {
                   <div>
                     <div className="font-medium">{product.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      ID: {product.id}
+                      ID: {product._id || product.id}
                     </div>
                   </div>
                 </div>
               </TableCell>
               <TableCell>{product.category}</TableCell>
-              <TableCell>${product.price.toFixed(2)}</TableCell>
+              <TableCell>${product.price?.toFixed(2)}</TableCell>
               <TableCell>{product.quantity}</TableCell>
               <TableCell>
                 <Badge variant={product.inStock ? 'default' : 'destructive'}>
@@ -131,7 +120,7 @@ export default function ProductsTable() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link 
-                        href={`/admin/products/${product.id}/edit`}
+                        href={`/admin/products/${product._id || product.id}/edit`}
                         className="flex items-center"
                       >
                         <Edit className="mr-2 h-4 w-4" />
@@ -140,7 +129,7 @@ export default function ProductsTable() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="flex items-center text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(product._id || product.id)}
                       disabled={isDeleting}
                     >
                       <Trash className="mr-2 h-4 w-4" />

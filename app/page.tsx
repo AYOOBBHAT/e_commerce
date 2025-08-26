@@ -1,6 +1,7 @@
 import Hero from '@/components/home/Hero';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import CategoryGrid from '@/components/home/CategoryGrid';
+import AllProductsSection from '@/components/home/AllProductsSection';
 
 export default function Home() {
   return (
@@ -8,6 +9,12 @@ export default function Home() {
       <Hero />
       <CategoryGrid />
       <FeaturedProducts />
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">All Products</h2>
+          <AllProductsSection />
+        </div>
+      </section>
       
       {/* Promotional Banner */}
       <section className="py-12 md:py-16 bg-primary/5">

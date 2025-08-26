@@ -3,10 +3,11 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import SessionProvider from '@/components/SessionProvider';
-import Header from '@/components/layouts/Header';
+import SessionProvider, { useSession } from '@/components/SessionProvider';
+import HeaderWithSession from '@/components/layouts/HeaderWithSession';
 import Footer from '@/components/layouts/Footer';
 import { SITE_NAME } from '@/lib/constants';
+import { CartProvider } from '@/components/CartProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,13 +34,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionProvider>
-            <div className="flex flex-col min-h-screen">
-              <Header user={null} />
+            <CartProvider>
+              <HeaderWithSession />
               <main className="flex-grow pt-16 md:pt-20">
                 {children}
               </main>
               <Footer />
-            </div>
+            </CartProvider>
           </SessionProvider>
           <Toaster />
         </ThemeProvider>

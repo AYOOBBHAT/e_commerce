@@ -55,11 +55,11 @@ const getStatusColor = (status: string) => {
     case 'processing':
       return 'default';
     case 'confirmed':
-      return 'primary';
+      return 'secondary'; // changed from 'primary' to 'secondary'
     case 'shipped':
       return 'secondary';
     case 'delivered':
-      return 'success';
+      return 'outline'; // use 'outline' for delivered
     case 'cancelled':
       return 'destructive';
     default:

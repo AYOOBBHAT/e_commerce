@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { PRODUCT_CATEGORIES, SITE_NAME } from '@/lib/constants';
+import { useSession } from '../SessionProvider';
+import { useCart } from '../CartProvider';
 
 interface HeaderProps {
   user: {
@@ -33,6 +35,8 @@ export default function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
   const router = useRouter();
+  const { refreshSession } = useSession();
+  const { cart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,6 +57,7 @@ export default function Header({ user }: HeaderProps) {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      await refreshSession();
       router.push('/');
       router.refresh();
     } catch (error) {
@@ -127,7 +132,7 @@ export default function Header({ user }: HeaderProps) {
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  0
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
               </Button>
             </Link>

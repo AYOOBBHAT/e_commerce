@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary';
+import { useCart } from '@/components/CartProvider';
 
 interface ProductCardProps {
   product: {
@@ -30,6 +32,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const { addToCart } = useCart();
   
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -49,6 +52,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     
     if (!isAddedToCart) {
       setIsAddedToCart(true);
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+      });
       toast.success('Added to cart');
       
       // Reset the button after 2 seconds
@@ -69,7 +79,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="relative pt-[100%]">
           {/* Product Image */}
           <Image
-            src={product.image}
+            src={getOptimizedCloudinaryUrl(product.image, 400)}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"

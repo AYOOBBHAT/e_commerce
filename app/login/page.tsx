@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { SITE_NAME } from '@/lib/constants';
+import { useSession } from '@/components/SessionProvider';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -31,6 +32,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { refreshSession } = useSession();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -59,6 +61,7 @@ export default function Login() {
       }
       
       toast.success('Login successful!');
+      await refreshSession();
       router.push('/');
       router.refresh();
     } catch (error: any) {
