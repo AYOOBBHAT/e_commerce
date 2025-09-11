@@ -70,11 +70,15 @@ export default function AddProductPage() {
           inStock: parseInt(form.quantity, 10) > 0,
         }),
       });
-      if (!res.ok) throw new Error("Failed to add product");
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to add product");
+        throw new Error(errorData.error || "Failed to add product");
+      }
       router.push("/admin/products");
       router.refresh();
     } catch (err) {
-      alert("Failed to add product");
+      // error already shown in alert above
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +101,8 @@ export default function AddProductPage() {
           <Textarea id="description" name="description" value={form.description} onChange={handleChange} required />
         </div>
         <div>
-          <Label htmlFor="price">Price</Label>
-          <Input id="price" name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required />
+          <Label htmlFor="price">Price (₹)</Label>
+          <Input id="price" name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required placeholder="Enter price in INR" />
         </div>
         <div>
           <Label htmlFor="category">Category</Label>

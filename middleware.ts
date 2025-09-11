@@ -20,6 +20,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/category') ||
     pathname === '/login' ||
     pathname === '/register'
+    || pathname === '/forgot-password'
+    || pathname === '/reset-password'
   ) {
     return NextResponse.next();
   }

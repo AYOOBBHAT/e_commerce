@@ -1,10 +1,10 @@
 export const PRODUCT_CATEGORIES = [
-  { id: 'electronics', name: 'Electronics' },
-  { id: 'clothing', name: 'Clothing & Fashion' },
-  { id: 'home', name: 'Home & Kitchen' },
-  { id: 'books', name: 'Books' },
-  { id: 'beauty', name: 'Beauty & Personal Care' },
-  { id: 'sports', name: 'Sports & Outdoors' },
+  { id: 'handmade-healthy-bites', name: 'Handmade Healthy Bites' },
+  { id: 'customised-handmade', name: 'Customised Handmade' },
+  { id: 'kashmir-delights', name: 'Kashmir Delights' },
+  { id: 'seeds', name: 'Seeds' },
+  { id: 'spices', name: 'Spices' },
+  { id: 'farm-fresh-dry-fruits-nuts', name: 'Farm Fresh Dry Fruits & Nuts' },
 ];
 
 export const PAYMENT_METHODS = [
@@ -21,4 +21,4 @@ export const ORDER_STATUS = [
   { id: 'cancelled', name: 'Cancelled' },
 ];
 
-export const SITE_NAME = 'ShopSphere';
+export const SITE_NAME = 'ZeeShaEla & Co.';

@@ -21,16 +21,18 @@ export default function CartPage() {
             <Image src={item.image} alt={item.name} width={80} height={80} className="rounded border" />
             <div className="flex-1">
               <div className="font-medium">{item.name}</div>
-              <div className="text-muted-foreground text-sm">${item.price.toFixed(2)} x {item.quantity}</div>
+              <div className="text-muted-foreground text-sm">₹{item.price.toFixed(2)} x {item.quantity}</div>
             </div>
             <Button variant="destructive" onClick={() => removeFromCart(item.id)}>Remove</Button>
           </div>
         ))}
       </div>
       <div className="flex justify-between items-center mt-8">
-        <div className="text-lg font-semibold">Total: ${total.toFixed(2)}</div>
+  <div className="text-lg font-semibold">Total: ₹{total.toFixed(2)}</div>
         <Button variant="secondary" onClick={clearCart}>Clear Cart</Button>
-        {/* Add checkout button here if needed */}
+        <Link href="/checkout">
+          <Button variant="default">Checkout</Button>
+        </Link>
       </div>
       <div className="mt-6">
         <Link href="/products">

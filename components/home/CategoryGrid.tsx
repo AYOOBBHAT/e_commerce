@@ -8,28 +8,34 @@ import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary';
 // Extended category data with images for display
 const categoryData = [
 	{
-		...PRODUCT_CATEGORIES[0], // Electronics
-		image:
-			'https://images.pexels.com/photos/1029757/pexels-photo-1029757.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-		description: 'Latest gadgets and tech innovations',
+		...PRODUCT_CATEGORIES[0],
+		image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=compress&w=400&q=80',
+		description: 'Nutritious handmade healthy bites for every occasion.',
 	},
 	{
-		...PRODUCT_CATEGORIES[1], // Clothing & Fashion
-		image:
-			'https://images.pexels.com/photos/934070/pexels-photo-934070.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-		description: 'Trendy apparel for all seasons',
+		...PRODUCT_CATEGORIES[1],
+		image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=compress&w=400&q=80',
+		description: 'Customised handmade treats crafted with care.',
 	},
 	{
-		...PRODUCT_CATEGORIES[2], // Home & Kitchen
-		image:
-			'https://images.pexels.com/photos/6492403/pexels-photo-6492403.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-		description: 'Essentials for your living space',
+		...PRODUCT_CATEGORIES[2],
+		image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=compress&w=400&q=80',
+		description: 'Delights from the heart of Kashmir.',
 	},
 	{
-		...PRODUCT_CATEGORIES[3], // Books
-		image:
-			'https://images.pexels.com/photos/1370295/pexels-photo-1370295.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-		description: 'Expand your mind with our collection',
+		...PRODUCT_CATEGORIES[3],
+		image: 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=compress&w=400&q=80',
+		description: 'Premium seeds for health and taste.',
+	},
+	{
+		...PRODUCT_CATEGORIES[4],
+		image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=compress&w=400&q=80',
+		description: 'Aromatic spices to elevate your dishes.',
+	},
+	{
+		...PRODUCT_CATEGORIES[5],
+		image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=compress&w=400&q=80',
+		description: 'Farm fresh dry fruits and nuts for a healthy lifestyle.',
 	},
 ];
 

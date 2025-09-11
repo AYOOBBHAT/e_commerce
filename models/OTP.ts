@@ -6,7 +6,7 @@ const otpSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 300 } // 5 minutes
 });
 
-// TTL Index
-otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
+// TTL Index (only define once, do not use index: true in schema field above)
+// otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
 
-export default mongoose.model("OTP", otpSchema);
+export default mongoose.models.OTP || mongoose.model("OTP", otpSchema);

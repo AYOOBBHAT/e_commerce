@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Configure nodemailer
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
@@ -62,18 +62,18 @@ export async function POST(request: NextRequest) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Password Reset Code - ShopSphere',
+  subject: 'Password Reset Code - ZeeShaEla & Co.',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #333; margin-bottom: 10px;">ShopSphere</h1>
+            <h1 style="color: #333; margin-bottom: 10px;">ZeeShaEla & Co.</h1>
             <h2 style="color: #666; font-weight: normal;">Password Reset Request</h2>
           </div>
           
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <p style="margin: 0 0 15px 0; color: #333;">Hello,</p>
             <p style="margin: 0 0 15px 0; color: #333;">
-              We received a request to reset your password for your ShopSphere account.
+              We received a request to reset your password for your ZeeShaEla & Co. account.
             </p>
             <p style="margin: 0 0 15px 0; color: #333;">
               Your password reset code is:
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div style="text-align: center; color: #666; font-size: 12px; margin-top: 30px;">
-            <p>© 2025 ShopSphere. All rights reserved.</p>
+            <p>© 2025 ZeeShaEla & Co. All rights reserved.</p>
           </div>
         </div>
       `,

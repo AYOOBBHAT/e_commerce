@@ -53,15 +53,11 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    // Update user password
-    user.password = hashedPassword;
+
+    // Set new password (let pre-save hook hash it)
+    user.password = newPassword;
     await user.save();
-    
+
     // Delete the used OTP
     await OTP.deleteOne({ email });
     
