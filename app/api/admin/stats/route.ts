@@ -29,7 +29,7 @@ export async function GET() {
 
     // Get total products sold
     const productsSold = orders.reduce(
-      (acc, order) => acc + order.orderItems.reduce((sum, item) => sum + item.quantity, 0),
+  (acc, order) => acc + order.orderItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
       0
     );
 
