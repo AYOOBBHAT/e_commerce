@@ -9,39 +9,39 @@ import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary';
 const categoryData = [
 	{
 		...PRODUCT_CATEGORIES[0],
-		image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=compress&w=400&q=80',
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784053/file_00000000ca44622fae0e8728733e376e_gflfzi.png',
 		description: 'Nutritious handmade healthy bites for every occasion.',
 	},
 	{
-		...PRODUCT_CATEGORIES[1],
-		image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=compress&w=400&q=80',
+		...PRODUCT_CATEGORIES[2],
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757779671/file_000000004cbc61fb85a27a99641c5f0a_ezwev8.png',
 		description: 'Customised handmade treats crafted with care.',
 	},
 	{
-		...PRODUCT_CATEGORIES[2],
-		image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=compress&w=400&q=80',
+		...PRODUCT_CATEGORIES[1],
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784880/file_000000009388622f87236522f0f9e735_1_u1aled.png',
 		description: 'Delights from the heart of Kashmir.',
 	},
 	{
 		...PRODUCT_CATEGORIES[3],
-		image: 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=compress&w=400&q=80',
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757782102/file_000000006b9c62308d886b394646f926_wis2jx.png',
 		description: 'Premium seeds for health and taste.',
 	},
 	{
-		...PRODUCT_CATEGORIES[4],
-		image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=compress&w=400&q=80',
+		...PRODUCT_CATEGORIES[5],
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757778403/file_000000009a8461faac46955475308e19_l8mmgh.png',
 		description: 'Aromatic spices to elevate your dishes.',
 	},
 	{
-		...PRODUCT_CATEGORIES[5],
-		image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=compress&w=400&q=80',
+		...PRODUCT_CATEGORIES[4],
+		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757783218/file_0000000067cc6243af79812b879adfa5_1_nwyywo.png',
 		description: 'Farm fresh dry fruits and nuts for a healthy lifestyle.',
 	},
 ];
 
 export default function CategoryGrid() {
-	return (
-		<section className="py-12 md:py-16 bg-muted">
+			return (
+				<section className="py-12 md:py-16 bg-muted">
 			<div className="container px-4 mx-auto">
 				<div className="text-center mb-8 md:mb-12">
 					<h2 className="text-2xl md:text-3xl font-bold">

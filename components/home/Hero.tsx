@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 const slides = [
   {
     id: 1,
-    image: 'https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    mobileImage: 'https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784053/file_00000000ca44622fae0e8728733e376e_gflfzi.png',
+    mobileImage: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784053/file_00000000ca44622fae0e8728733e376e_gflfzi.png',
     title: 'Spring Collection 2025',
     subtitle: 'Discover fresh styles for the new season',
     cta: 'Shop Now',
@@ -20,8 +20,8 @@ const slides = [
   },
   {
     id: 2,
-    image: 'https://images.pexels.com/photos/4968391/pexels-photo-4968391.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    mobileImage: 'https://images.pexels.com/photos/4968391/pexels-photo-4968391.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757778399/Screenshot_20250913_183609_Adobe_Acrobat_dl32g3.jpg',
+    mobileImage: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757778399/Screenshot_20250913_183609_Adobe_Acrobat_dl32g3.jpg',
     title: 'Tech Innovations',
     subtitle: 'Latest gadgets that make life easier',
     cta: 'Explore',
@@ -31,8 +31,8 @@ const slides = [
   },
   {
     id: 3,
-    image: 'https://images.pexels.com/photos/1488463/pexels-photo-1488463.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    mobileImage: 'https://images.pexels.com/photos/1488463/pexels-photo-1488463.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757779671/file_000000004cbc61fb85a27a99641c5f0a_ezwev8.png',
+    mobileImage: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757779671/file_000000004cbc61fb85a27a99641c5f0a_ezwev8.png',
     title: 'Home Essentials',
     subtitle: 'Transform your space with our collection',
     cta: 'Discover',
@@ -46,20 +46,28 @@ export default function Hero() {
   const [current, setCurrent] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   
-  const goToSlide = (index: number) => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setCurrent(index);
+  // const goToSlide = (index: number) => {
+  //   if (isAnimating) return;
+  //   setIsAnimating(true);
+  //   setCurrent(index);
     
-    // Reset animation state after animation completes
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 700); // Slightly longer than the animation duration
-  };
+  //   // Reset animation state after animation completes
+  //   setTimeout(() => {
+  //     setIsAnimating(false);
+  //   }, 700); // Slightly longer than the animation duration
+  // };
+  const goToSlide = useCallback((index: number) => {
+  if (isAnimating) return;
+  setIsAnimating(true);
+  setCurrent(index);
+  setTimeout(() => {
+    setIsAnimating(false);
+  }, 700);
+}, [isAnimating]);
   
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     goToSlide((current + 1) % slides.length);
-  };
+  }, [current, goToSlide]);
   
   const goToPrev = () => {
     goToSlide((current - 1 + slides.length) % slides.length);
@@ -70,9 +78,8 @@ export default function Hero() {
     const interval = setInterval(() => {
       goToNext();
     }, 5000);
-    
     return () => clearInterval(interval);
-  }, [current]);
+  }, [current, goToNext]);
   
   const slide = slides[current];
   const textColorClass = slide.theme === 'dark' ? 'text-white' : 'text-gray-900';
@@ -102,7 +109,7 @@ export default function Hero() {
             alt={s.title}
             fill
             priority
-            className="object-cover hidden md:block"
+            className="object-contain hidden md:block"
             sizes="100vw"
           />
           
@@ -112,7 +119,7 @@ export default function Hero() {
             alt={s.title}
             fill
             priority
-            className="object-cover md:hidden"
+            className="object-contain md:hidden"
             sizes="100vw"
           />
           
