@@ -66,24 +66,25 @@ export default function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled || mobileMenuOpen ? 'bg-background shadow-sm' : 'bg-background/80 backdrop-blur-md'
-      }`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
+    <>
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled || mobileMenuOpen ? 'bg-background/95 backdrop-blur-md shadow-lg border-b' : 'bg-background/80 backdrop-blur-md'
+        }`}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <ShoppingBag className="h-8 w-8 mr-2 text-primary" />
-            <span className="text-xl font-bold text-foreground">{SITE_NAME}</span>
+          <Link href="/" className="flex items-center flex-shrink-0">
+            <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 mr-2 text-primary" />
+            <span className="text-lg sm:text-xl font-bold text-foreground truncate">{SITE_NAME}</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-8">
             <Link 
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full ${
                 pathname === '/' ? 'text-primary' : 'text-foreground'
               }`}
             >
@@ -91,14 +92,14 @@ export default function Header({ user }: HeaderProps) {
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="link" className="text-foreground p-0 h-auto text-sm font-medium">
+                <Button variant="link" className="text-foreground p-0 h-auto text-sm font-medium hover:text-primary transition-colors">
                   Categories
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
+              <DropdownMenuContent align="center" className="w-64 mt-2">
                 {PRODUCT_CATEGORIES.map((category) => (
-                  <DropdownMenuItem key={category.id}>
-                    <Link href={`/category/${category.id}`} className="w-full">
+                  <DropdownMenuItem key={category.id} className="p-0">
+                    <Link href={`/category/${category.id}`} className="w-full px-2 py-2 hover:bg-muted rounded-sm transition-colors">
                       {category.name}
                     </Link>
                   </DropdownMenuItem>
@@ -107,7 +108,7 @@ export default function Header({ user }: HeaderProps) {
             </DropdownMenu>
             <Link 
               href="/products"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full ${
                 pathname.startsWith('/products') ? 'text-primary' : 'text-foreground'
               }`}
             >
@@ -116,44 +117,52 @@ export default function Header({ user }: HeaderProps) {
           </nav>
 
           {/* Search, Cart, Wishlist, Account */}
-          <div className="hidden md:flex items-center space-x-4">
-            <form onSubmit={handleSearch} className="relative w-56">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Desktop Search */}
+            <form onSubmit={handleSearch} className="relative hidden md:block w-48 lg:w-64">
               <Input
                 type="search"
                 placeholder="Search products..."
-                className="pl-9 h-9 rounded-full bg-muted"
+                className="pl-9 h-9 rounded-full bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             </form>
             
+            {/* Mobile Search Button */}
+            <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
+              <Search className="h-4 w-4" />
+            </Button>
+            
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              <Button variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-primary/10 transition-colors">
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                {cart.reduce((sum, item) => sum + item.quantity, 0) > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-primary text-[10px] sm:text-xs text-primary-foreground font-medium">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
+                )}
               </Button>
             </Link>
             
-            <Link href="/wishlist">
-              <Button variant="ghost" size="icon">
-                <Heart className="h-5 w-5" />
+            <Link href="/wishlist" className="hidden sm:block">
+              <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-primary/10 transition-colors">
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <User className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-primary/10 transition-colors">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-64 mt-2">
                   <DropdownMenuLabel>
                     <div className="flex flex-col">
-                      <span>{user.name}</span>
+                      <span className="font-medium">{user.name}</span>
                       <span className="text-xs text-muted-foreground">{user.email}</span>
                     </div>
                   </DropdownMenuLabel>
@@ -161,7 +170,7 @@ export default function Header({ user }: HeaderProps) {
                   {user.role === 'admin' && (
                     <>
                       <DropdownMenuItem>
-                        <Link href="/admin" className="flex w-full">
+                        <Link href="/admin" className="flex w-full items-center">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
                           <span>Admin Dashboard</span>
                         </Link>
@@ -170,19 +179,19 @@ export default function Header({ user }: HeaderProps) {
                     </>
                   )}
                   <DropdownMenuItem>
-                    <Link href="/account/profile" className="flex w-full">
+                    <Link href="/account/profile" className="flex w-full items-center">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/account/orders" className="flex w-full">
+                    <Link href="/account/orders" className="flex w-full items-center">
                       <PackageSearch className="mr-2 h-4 w-4" />
                       <span>My Orders</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/account/settings" className="flex w-full">
+                    <Link href="/account/settings" className="flex w-full items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </Link>
@@ -198,60 +207,64 @@ export default function Header({ user }: HeaderProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" asChild>
+              <div className="hidden sm:flex items-center space-x-2">
+                <Button variant="outline" size="sm" asChild>
                   <Link href="/login">Login</Link>
                 </Button>
-                <Button variant="default" asChild>
+                <Button variant="default" size="sm" asChild>
                   <Link href="/register">Register</Link>
                 </Button>
               </div>
             )}
-          </div>
 
           {/* Mobile menu button */}
           <Button 
             variant="ghost" 
-            size="icon" 
-            className="md:hidden"
+            size="icon"
+            className="lg:hidden h-9 w-9 ml-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
+          </div>
         </div>
-      </div>
+        </div>
+      </header>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background border-t px-4 py-5">
-          <form onSubmit={handleSearch} className="relative mb-4">
+        <div className="lg:hidden fixed inset-x-0 top-14 sm:top-16 lg:top-20 z-40 bg-background/95 backdrop-blur-md border-b shadow-lg">
+          <div className="container mx-auto px-4 sm:px-6 py-6 max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <form onSubmit={handleSearch} className="relative mb-6">
             <Input
               type="search"
               placeholder="Search products..."
-              className="pl-9 h-10 w-full"
+              className="pl-9 h-11 w-full rounded-lg bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           </form>
           
-          <nav className="flex flex-col space-y-4">
+          <nav className="flex flex-col space-y-6">
             <Link 
               href="/"
-              className={`text-sm font-medium ${pathname === '/' ? 'text-primary' : 'text-foreground'}`}
+              className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
+                pathname === '/' ? 'text-primary bg-primary/10' : 'text-foreground hover:bg-muted'
+              }`}
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Categories</p>
-              <div className="pl-4 space-y-2 border-l">
+            <div className="space-y-4">
+              <p className="text-base font-semibold text-foreground">Categories</p>
+              <div className="grid grid-cols-2 gap-2">
                 {PRODUCT_CATEGORIES.map((category) => (
                   <Link
                     key={category.id}
                     href={`/category/${category.id}`}
-                    className="block text-sm text-muted-foreground"
+                    className="block text-sm text-muted-foreground hover:text-primary py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {category.name}
@@ -262,25 +275,27 @@ export default function Header({ user }: HeaderProps) {
             
             <Link 
               href="/products"
-              className={`text-sm font-medium ${pathname.startsWith('/products') ? 'text-primary' : 'text-foreground'}`}
+              className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
+                pathname.startsWith('/products') ? 'text-primary bg-primary/10' : 'text-foreground hover:bg-muted'
+              }`}
               onClick={() => setMobileMenuOpen(false)}
             >
               All Products
             </Link>
             
-            <div className="flex space-x-4 pt-2">
+            <div className="flex space-x-4 pt-4 border-t">
               <Link 
                 href="/cart"
-                className="flex items-center text-sm font-medium"
+                className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Cart
+                Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
               </Link>
               
               <Link 
                 href="/wishlist"
-                className="flex items-center text-sm font-medium"
+                className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Heart className="h-5 w-5 mr-2" />
@@ -289,12 +304,15 @@ export default function Header({ user }: HeaderProps) {
             </div>
             
             {user ? (
-              <div className="pt-2 border-t">
-                <p className="text-sm font-medium mb-3">Account</p>
+              <div className="pt-4 border-t space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </div>
                 {user.role === 'admin' && (
                   <Link 
                     href="/admin"
-                    className="flex items-center text-sm mb-3"
+                    className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -303,7 +321,7 @@ export default function Header({ user }: HeaderProps) {
                 )}
                 <Link 
                   href="/account/profile"
-                  className="flex items-center text-sm mb-3"
+                  className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="mr-2 h-4 w-4" />
@@ -311,7 +329,7 @@ export default function Header({ user }: HeaderProps) {
                 </Link>
                 <Link 
                   href="/account/orders"
-                  className="flex items-center text-sm mb-3"
+                  className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <PackageSearch className="mr-2 h-4 w-4" />
@@ -319,21 +337,21 @@ export default function Header({ user }: HeaderProps) {
                 </Link>
                 <Button 
                   onClick={handleLogout}
-                  variant="outline" 
-                  className="w-full justify-start text-destructive"
+                  variant="destructive" 
+                  className="w-full justify-start mt-4"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </Button>
               </div>
             ) : (
-              <div className="pt-4 space-y-2">
-                <Button variant="outline" className="w-full" asChild>
+              <div className="pt-4 border-t space-y-3">
+                <Button variant="outline" className="w-full h-11" asChild>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     Login
                   </Link>
                 </Button>
-                <Button variant="default" className="w-full" asChild>
+                <Button variant="default" className="w-full h-11" asChild>
                   <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                     Register
                   </Link>
@@ -341,8 +359,9 @@ export default function Header({ user }: HeaderProps) {
               </div>
             )}
           </nav>
+          </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

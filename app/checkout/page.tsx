@@ -157,9 +157,29 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container max-w-xl mx-auto px-4 py-12">
+    <div className="container max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Checkout</h1>
+      
+      {/* Order Summary */}
+      <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-muted/50 rounded-lg">
+        <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+        <div className="space-y-2">
+          {cart.map((item) => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span>{item.name} × {item.quantity}</span>
+              <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t mt-4 pt-4">
+          <div className="flex justify-between font-semibold text-lg">
+            <span>Total</span>
+            <span>₹{total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+      
       <form
         onSubmit={
           form.paymentMethod === 'cod'
@@ -168,34 +188,73 @@ export default function CheckoutPage() {
             ? (e) => { e.preventDefault(); handleRazorpayPayment(); }
             : (e) => { e.preventDefault(); handlePhonePePayment(); }
         }
-        className="space-y-4 bg-card p-6 rounded-lg border"
+        className="space-y-4 sm:space-y-6 bg-card p-4 sm:p-6 rounded-lg border shadow-sm"
       >
-        <div>
-          <label>Name</label>
-          <input name="name" value={form.name} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Full Name</label>
+          <input 
+            name="name" 
+            value={form.name} 
+            onChange={handleChange} 
+            required 
+            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" 
+            placeholder="Enter your full name"
+          />
         </div>
-        <div>
-          <label>Email</label>
-          <input name="email" type="email" value={form.email} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Email Address</label>
+          <input 
+            name="email" 
+            type="email" 
+            value={form.email} 
+            onChange={handleChange} 
+            required 
+            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" 
+            placeholder="Enter your email"
+          />
         </div>
-        <div>
-          <label>Phone</label>
-          <input name="phone" value={form.phone} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Phone Number</label>
+          <input 
+            name="phone" 
+            value={form.phone} 
+            onChange={handleChange} 
+            required 
+            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" 
+            placeholder="Enter your phone number"
+          />
         </div>
-        <div>
-          <label>Shipping Address</label>
-          <input name="address" value={form.address} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Shipping Address</label>
+          <textarea 
+            name="address" 
+            value={form.address} 
+            onChange={handleChange} 
+            required 
+            rows={3}
+            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none" 
+            placeholder="Enter your complete shipping address"
+          />
         </div>
-        <div>
-          <label>Payment Method</label>
-          <select name="paymentMethod" value={form.paymentMethod} onChange={handleChange} className="w-full border rounded px-3 py-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Payment Method</label>
+          <select 
+            name="paymentMethod" 
+            value={form.paymentMethod} 
+            onChange={handleChange} 
+            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          >
             <option value="cod">Cash on Delivery</option>
             <option value="online">Online Payment (Razorpay)</option>
             <option value="phonepe">PhonePe</option>
           </select>
         </div>
-  <div className="text-lg font-semibold">Total: ₹{total.toFixed(2)}</div>
-        <Button type="submit" disabled={isLoading || razorpayLoading || phonepeLoading}>
+        
+        <Button 
+          type="submit" 
+          disabled={isLoading || razorpayLoading || phonepeLoading}
+          className="w-full h-12 text-base font-semibold mt-6"
+        >
           {isLoading || razorpayLoading || phonepeLoading
             ? "Processing..."
             : form.paymentMethod === 'cod'

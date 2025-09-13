@@ -94,7 +94,7 @@ export default function Hero() {
   }
   
   return (
-    <div className="relative h-[70vh] min-h-[500px] max-h-[700px] overflow-hidden">
+    <div className="relative h-[60vh] sm:h-[70vh] lg:h-[80vh] min-h-[400px] sm:min-h-[500px] max-h-[800px] overflow-hidden">
       {/* Slides */}
       {slides.map((s, index) => (
         <div
@@ -109,7 +109,7 @@ export default function Hero() {
             alt={s.title}
             fill
             priority
-            className="object-contain hidden md:block"
+            className="object-cover sm:object-contain hidden sm:block"
             sizes="100vw"
           />
           
@@ -119,18 +119,18 @@ export default function Hero() {
             alt={s.title}
             fill
             priority
-            className="object-contain md:hidden"
+            className="object-cover sm:hidden"
             sizes="100vw"
           />
           
           {/* Overlay for better text visibility */}
-          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent sm:bg-black/20"></div>
           
           {/* Content */}
-          <div className={`container mx-auto px-4 h-full flex flex-col ${positionClass}`}>
-            <div className="max-w-xl">
+          <div className={`container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-center text-center sm:${positionClass}`}>
+            <div className="max-w-2xl lg:max-w-3xl">
               <h1 
-                className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-4 transition-transform duration-500 ${textColorClass}`}
+                className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 transition-transform duration-500 leading-tight ${textColorClass}`}
                 style={{
                   transform: index === current ? 'translateY(0)' : 'translateY(20px)',
                   opacity: index === current ? 1 : 0,
@@ -140,7 +140,7 @@ export default function Hero() {
                 {s.title}
               </h1>
               <p 
-                className={`text-lg md:text-xl mb-6 transition-transform duration-500 ${
+                className={`text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 transition-transform duration-500 leading-relaxed ${
                   s.theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
                 }`}
                 style={{
@@ -160,9 +160,10 @@ export default function Hero() {
                 }}
               >
                 <Button 
-                  size="lg" 
+                  size="lg"
+                  className="h-12 px-8 text-base sm:text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   variant={buttonVariant}
-                  className={buttonVariant === 'outline' ? 'border-white text-white hover:bg-white hover:text-black' : ''}
+                  className={buttonVariant === 'outline' ? 'border-2 border-white text-white hover:bg-white hover:text-black backdrop-blur-sm' : 'shadow-lg'}
                 >
                   {s.cta}
                 </Button>
@@ -176,28 +177,28 @@ export default function Hero() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30"
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300"
         onClick={goToPrev}
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
       
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30"
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300"
         onClick={goToNext}
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
       
       {/* Slide indicators */}
-      <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-20">
+      <div className="absolute bottom-4 sm:bottom-6 left-0 right-0 flex justify-center gap-2 z-20">
         {slides.map((_, index) => (
           <button
             key={index}
             className={`h-2 rounded-full transition-all ${
-              index === current ? 'w-8 bg-primary' : 'w-2 bg-white/50'
+              index === current ? 'w-6 sm:w-8 bg-primary' : 'w-2 bg-white/50 hover:bg-white/70'
             }`}
             onClick={() => goToSlide(index)}
           />

@@ -36,7 +36,7 @@ export default function RootLayout({
           <SessionProvider>
             <CartProvider>
               <HeaderWithSession />
-              <main className="flex-grow pt-16 md:pt-20">
+              <main className="flex-grow pt-14 sm:pt-16 lg:pt-20">
                 {children}
               </main>
               <Footer />
