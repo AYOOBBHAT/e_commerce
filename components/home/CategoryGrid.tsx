@@ -68,7 +68,7 @@ export default function CategoryGrid() {
 									size="sm"
 									className="w-fit mt-auto bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white hover:text-black group-hover:scale-105 transition-all duration-300"
 								>
-									Shop {category.name}
+									{category.name}
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Button>
 							</div>
