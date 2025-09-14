@@ -161,9 +161,8 @@ export default function Hero() {
               >
                 <Button 
                   size="lg"
-                  className="h-12 px-8 text-base sm:text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   variant={buttonVariant}
-                  className={buttonVariant === 'outline' ? 'border-2 border-white text-white hover:bg-white hover:text-black backdrop-blur-sm' : 'shadow-lg'}
+                  className={`h-12 px-8 text-base sm:text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${buttonVariant === 'outline' ? 'border-2 border-white text-white hover:bg-white hover:text-black backdrop-blur-sm' : 'shadow-lg'}`}
                 >
                   {s.cta}
                 </Button>
