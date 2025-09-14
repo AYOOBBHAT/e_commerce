@@ -13,30 +13,41 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Your Cart</h1>
-      <div className="flex flex-col gap-6">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Your Cart</h1>
+      <div className="flex flex-col gap-4 sm:gap-6">
         {cart.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 border-b pb-4">
-            <Image src={item.image} alt={item.name} width={80} height={80} className="rounded border" />
+          <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-4 bg-card rounded-lg shadow-sm border">
+            <Image src={item.image} alt={item.name} width={60} height={60} className="sm:w-20 sm:h-20 rounded-lg border object-cover flex-shrink-0" />
             <div className="flex-1">
-              <div className="font-medium">{item.name}</div>
-              <div className="text-muted-foreground text-sm">₹{item.price.toFixed(2)} x {item.quantity}</div>
+              <div className="font-semibold text-sm sm:text-base mb-1">{item.name}</div>
+              <div className="text-muted-foreground text-sm">₹{item.price.toFixed(2)} × {item.quantity}</div>
+              <div className="font-semibold text-primary mt-1">₹{(item.price * item.quantity).toFixed(2)}</div>
             </div>
-            <Button variant="destructive" onClick={() => removeFromCart(item.id)}>Remove</Button>
+            <Button variant="destructive" size="sm" onClick={() => removeFromCart(item.id)} className="flex-shrink-0">
+              Remove
+            </Button>
           </div>
         ))}
       </div>
-      <div className="flex justify-between items-center mt-8">
-  <div className="text-lg font-semibold">Total: ₹{total.toFixed(2)}</div>
-        <Button variant="secondary" onClick={clearCart}>Clear Cart</Button>
-        <Link href="/checkout">
-          <Button variant="default">Checkout</Button>
-        </Link>
+      <div className="mt-8 sm:mt-12 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 bg-muted/50 rounded-lg">
+          <div className="text-xl sm:text-2xl font-bold">Total: ₹{total.toFixed(2)}</div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Button variant="outline" onClick={clearCart} className="w-full sm:w-auto">
+              Clear Cart
+            </Button>
+            <Link href="/checkout" className="w-full sm:w-auto">
+              <Button variant="default" className="w-full sm:w-auto">
+                Proceed to Checkout
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-6 text-center">
         <Link href="/products">
-          <Button variant="outline">Continue Shopping</Button>
+          <Button variant="outline" size="lg">Continue Shopping</Button>
         </Link>
       </div>
     </div>

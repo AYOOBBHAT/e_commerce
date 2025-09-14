@@ -35,38 +35,40 @@ const categoryData = [
 
 export default function CategoryGrid() {
 			return (
-				<section className="py-12 md:py-16 bg-muted">
-			<div className="container px-4 mx-auto">
-				<div className="text-center mb-8 md:mb-12">
-					<h2 className="text-2xl md:text-3xl font-bold">
+				<section className="py-8 sm:py-12 lg:py-16 bg-muted/50">
+			<div className="container px-4 sm:px-6 lg:px-8 mx-auto">
+				<div className="text-center mb-8 sm:mb-10 lg:mb-12">
+					<h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
 						Shop by Category
 					</h2>
 					
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
 					{categoryData.map((category) => (
 						<Link
 							key={category.id}
 							href={`/category/${category.id}`}
-							className="group relative rounded-lg overflow-hidden flex h-[250px] shadow-sm transition-all hover:shadow-md"
+							className="group relative rounded-xl overflow-hidden flex h-[200px] sm:h-[250px] lg:h-[280px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 						>
 							<Image
 								src={getOptimizedCloudinaryUrl(category.image, 400)}
 								alt={category.name}
 								fill
-								className="object-cover transition-transform duration-500 group-hover:scale-110"
-								sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+								className="object-cover transition-transform duration-700 group-hover:scale-110"
+								sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
 							/>
 							{/* Overlay gradient */}
 							<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/5"></div>
 							<div className="relative flex flex-col p-6 mt-auto">
 								
+								
 								<Button
-									variant="secondary"
-									className="w-fit mt-auto group-hover:scale-105 transition-transform"
+									variant="outline"
+									size="sm"
+									className="w-fit mt-auto bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white hover:text-black group-hover:scale-105 transition-all duration-300"
 								>
-									 {category.name}
+									Shop {category.name}
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Button>
 							</div>

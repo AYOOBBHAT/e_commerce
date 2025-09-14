@@ -74,72 +74,72 @@ export default function ProductCard({ product }: ProductCardProps) {
     : 0;
   
   return (
-    <Card className="group overflow-hidden transition-all duration-300 h-full hover:shadow-md">
+    <Card className="group overflow-hidden transition-all duration-300 h-full hover:shadow-lg hover:-translate-y-1 border-0 shadow-sm bg-card/50 backdrop-blur-sm">
       <Link href={`/products/${product.slug}`}>
-        <div className="relative pt-[100%]">
+        <div className="relative pt-[100%] overflow-hidden rounded-t-lg">
           {/* Product Image */}
           <Image
             src={getOptimizedCloudinaryUrl(product.image, 400)}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
           {/* Quick Actions */}
-          <div className="absolute top-3 right-3 flex flex-col gap-2">
+          <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button 
               size="icon" 
-              variant="secondary" 
-              className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              variant="outline" 
+              className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
               onClick={handleAddToWishlist}
             >
               <Heart 
-                className={`h-4 w-4 ${isWishlisted ? 'fill-destructive text-destructive' : ''}`} 
+                className={`h-3.5 w-3.5 ${isWishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`} 
               />
             </Button>
             <Link href={`/products/${product.slug}`}>
               <Button 
                 size="icon" 
-                variant="secondary" 
-                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                variant="outline" 
+                className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             </Link>
           </div>
           
           {/* Discount Badge */}
           {discountPercentage > 0 && (
-            <Badge className="absolute top-3 left-3 bg-destructive">
+            <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-destructive text-white font-semibold shadow-lg">
               -{discountPercentage}%
             </Badge>
           )}
           
           {/* Featured Badge */}
           {product.featured && (
-            <Badge className="absolute top-3 left-3 bg-primary">
+            <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-primary text-white font-semibold shadow-lg">
               Featured
             </Badge>
           )}
           
           {/* Out of Stock Overlay */}
           {!product.inStock && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <Badge variant="outline" className="bg-background/80 text-lg py-1 px-3">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+              <Badge variant="outline" className="bg-background/90 text-base sm:text-lg py-2 px-4 font-semibold shadow-lg">
                 Out of Stock
               </Badge>
             </div>
           )}
         </div>
         
-        <CardContent className="p-4">
-          <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
-          <h3 className="text-base font-medium line-clamp-2 mb-2 min-h-[3rem]">{product.name}</h3>
-          <div className="flex items-center">
-            <span className="text-lg font-semibold">₹{product.price.toFixed(2)}</span>
+        <CardContent className="p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-muted-foreground mb-1 uppercase tracking-wide font-medium">{product.category}</div>
+          <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-3 min-h-[2.5rem] sm:min-h-[3rem] leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toFixed(2)}</span>
             {product.comparePrice && (
-              <span className="text-sm text-muted-foreground line-through ml-2">
+              <span className="text-sm text-muted-foreground line-through">
                 ₹{product.comparePrice.toFixed(2)}
               </span>
             )}
@@ -147,16 +147,16 @@ export default function ProductCard({ product }: ProductCardProps) {
         </CardContent>
       </Link>
       
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-3 sm:p-4 pt-0">
         <Button 
-          className="w-full"
+          className="w-full h-9 sm:h-10 font-semibold rounded-lg transition-all duration-300 hover:shadow-md"
           variant={isAddedToCart ? "outline" : "default"}
           disabled={!product.inStock || isAddedToCart}
           onClick={handleAddToCart}
         >
           {isAddedToCart ? (
             <>
-              <Check className="mr-2 h-4 w-4" /> Added
+              <Check className="mr-2 h-4 w-4" /> Added!
             </>
           ) : (
             <>
