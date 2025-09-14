@@ -10,32 +10,26 @@ const categoryData = [
 	{
 		...PRODUCT_CATEGORIES[0],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784053/file_00000000ca44622fae0e8728733e376e_gflfzi.png',
-		description: 'Nutritious handmade healthy bites for every occasion.',
 	},
 	{
 		...PRODUCT_CATEGORIES[2],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757779671/file_000000004cbc61fb85a27a99641c5f0a_ezwev8.png',
-		description: 'Customised handmade treats crafted with care.',
 	},
 	{
 		...PRODUCT_CATEGORIES[1],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757784880/file_000000009388622f87236522f0f9e735_1_u1aled.png',
-		description: 'Delights from the heart of Kashmir.',
 	},
 	{
 		...PRODUCT_CATEGORIES[3],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757782102/file_000000006b9c62308d886b394646f926_wis2jx.png',
-		description: 'Premium seeds for health and taste.',
 	},
 	{
 		...PRODUCT_CATEGORIES[5],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757778403/file_000000009a8461faac46955475308e19_l8mmgh.png',
-		description: 'Aromatic spices to elevate your dishes.',
 	},
 	{
 		...PRODUCT_CATEGORIES[4],
 		image: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757783218/file_0000000067cc6243af79812b879adfa5_1_nwyywo.png',
-		description: 'Farm fresh dry fruits and nuts for a healthy lifestyle.',
 	},
 ];
 
@@ -47,9 +41,7 @@ export default function CategoryGrid() {
 					<h2 className="text-2xl md:text-3xl font-bold">
 						Shop by Category
 					</h2>
-					<p className="text-muted-foreground mt-2">
-						Browse our curated collections
-					</p>
+					
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -69,17 +61,12 @@ export default function CategoryGrid() {
 							{/* Overlay gradient */}
 							<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/5"></div>
 							<div className="relative flex flex-col p-6 mt-auto">
-								<h3 className="text-xl font-semibold text-white mb-1">
-									{category.name}
-								</h3>
-								<p className="text-white/80 mb-4 text-sm">
-									{category.description}
-								</p>
+								
 								<Button
 									variant="secondary"
 									className="w-fit mt-auto group-hover:scale-105 transition-transform"
 								>
-									Shop {category.name}
+									 {category.name}
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Button>
 							</div>
