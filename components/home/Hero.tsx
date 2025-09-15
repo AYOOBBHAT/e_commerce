@@ -208,9 +208,9 @@ const slides = [
   {
     id: 1,
     desktopImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1600,h_900,c_fill/banner-desktop.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757919968/seeds1_k9tq1u.png',
     mobileImage:
-      'https://res.cloudinary.com/demo/image/upload/w_800,h_1000,c_fill/banner-mobile.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757919968/seeds1_k9tq1u.png',
     title: 'Spring Collection 2025',
     subtitle: 'Discover fresh styles for the new season',
     cta: 'Shop Now',
@@ -274,7 +274,7 @@ export default function Hero() {
   }
 
   return (
-    <div className="relative h-[60vh] sm:h-[70vh] lg:h-[80vh] min-h-[400px] sm:min-h-[500px] max-h-[800px] overflow-hidden">
+  <div className="relative h-[60vh] sm:h-[70vh] lg:h-[80vh] min-h-[400px] sm:min-h-[500px] max-h-[800px] overflow-hidden bg-white">
       {slides.map((s, index) => (
         <div
           key={s.id}
@@ -293,7 +293,7 @@ export default function Hero() {
               alt={s.title}
               fill
               priority
-              className="object-cover"
+              className="object-contain bg-white"
               sizes="100vw"
             />
           </picture>

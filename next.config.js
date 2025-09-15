@@ -4,7 +4,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true },
+  images: {
+    unoptimized: true,
+    domains: ['res.cloudinary.com'],
+  },
   optimizeFonts: false,
   webpack: (config) => {
     config.cache = false;

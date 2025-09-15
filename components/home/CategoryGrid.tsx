@@ -51,13 +51,13 @@ export default function CategoryGrid() {
 							href={`/category/${category.id}`}
 							className="group relative rounded-xl overflow-hidden flex h-[200px] sm:h-[250px] lg:h-[280px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 						>
-							<Image
-								src={getOptimizedCloudinaryUrl(category.image, 400)}
-								alt={category.name}
-								fill
-								className="object-cover transition-transform duration-700 group-hover:scale-110"
-								sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-							/>
+											<Image
+												src={getOptimizedCloudinaryUrl(category.image, 400)}
+												alt={category.name}
+												fill
+												className="object-contain bg-white transition-transform duration-700 group-hover:scale-105"
+												sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+											/>
 							{/* Overlay gradient */}
 							<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/5"></div>
 							<div className="relative flex flex-col p-6 mt-auto">

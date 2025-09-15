@@ -77,6 +77,7 @@
     @apply border-border;
   }
   body {
+    background-color: #fff !important;
     @apply bg-background text-foreground;
   }
 }
