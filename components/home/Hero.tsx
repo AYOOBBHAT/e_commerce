@@ -208,9 +208,9 @@ const slides = [
   {
     id: 1,
     desktopImage:
-      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757919968/seeds1_k9tq1u.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758018292/Trading_Center_Dussu_Pampore_J8k_192121_India_Department_of_Agriculture_Kashmir_Govt._of_J_K_tvpotp.png',
     mobileImage:
-      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1757919968/seeds1_k9tq1u.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758018292/Trading_Center_Dussu_Pampore_J8k_192121_India_Department_of_Agriculture_Kashmir_Govt._of_J_K_tvpotp.png',
     title: 'Spring Collection 2025',
     subtitle: 'Discover fresh styles for the new season',
     cta: 'Shop Now',
@@ -221,9 +221,9 @@ const slides = [
   {
     id: 2,
     desktopImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1600,h_900,c_fill/tech-desktop.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758043117/walnut_1536_1024_rs6p6p.png',
     mobileImage:
-      'https://res.cloudinary.com/demo/image/upload/w_800,h_1000,c_fill/tech-mobile.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758043117/walnut_1536_1024_rs6p6p.png',
     title: 'Tech Innovations',
     subtitle: 'Latest gadgets that make life easier',
     cta: 'Explore',
@@ -231,6 +231,22 @@ const slides = [
     position: 'left',
     theme: 'dark',
   },
+  {
+    id: 3,
+    desktopImage:
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758023252/chocosms2_3_oj3qpw.png',
+    mobileImage:
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758023252/chocosms2_3_oj3qpw.png',
+    title: 'Tech Innovations',
+    subtitle: 'Latest gadgets that make life easier',
+    cta: 'Explore',
+    url: '/category/electronics',
+    position: 'left',
+    theme: 'dark',
+  },
+
+
+
 ];
 
 export default function Hero() {
@@ -298,8 +314,7 @@ export default function Hero() {
             />
           </picture>
 
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent sm:bg-black/20"></div>
+          {/* Overlay removed for hard white background */}
 
           {/* Content */}
           <div
