@@ -12,7 +12,7 @@ const categoryData = [
   {
     ...PRODUCT_CATEGORIES[0],
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/v1758045426/pic1_jmc0tl.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
   {
     ...PRODUCT_CATEGORIES[2],
@@ -53,18 +53,18 @@ export default function CategoryGrid() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {categoryData.map((category) => (
-           <Link
-  key={category.id}
-  href={`/category/${category.id}`}
-  className="group relative rounded-xl overflow-hidden aspect-[4/5] w-full shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
->
-  <Image
-    src={getOptimizedCloudinaryUrl(category.image, 800)}
-    alt={category.name}
-    fill
-    className="object-cover"
-    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-  />
+            <Link
+              key={category.id}
+              href={`/category/${category.id}`}
+              className="group relative rounded-xl overflow-hidden aspect-[1/1] w-full shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+            >
+              <Image
+                src={category.image}
+                alt={category.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              />
 
   <div className="absolute bottom-4 left-4">
     <Button
