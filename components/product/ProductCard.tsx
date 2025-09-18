@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -17,7 +17,8 @@ import { useCart } from '@/components/CartProvider';
 
 interface ProductCardProps {
   product: {
-    id: string;
+    id?: string;
+    _id?: string;
     slug: string;
     name: string;
     price: number;
@@ -53,7 +54,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     if (!isAddedToCart) {
       setIsAddedToCart(true);
       addToCart({
-        id: product.id,
+        id: product.id || product._id || '',
         name: product.name,
         price: product.price,
         image: product.image,
@@ -74,85 +75,77 @@ export default function ProductCard({ product }: ProductCardProps) {
     : 0;
   
   return (
+  <Link href={`/products/${product.slug}`} className="block h-full">
     <Card className="group overflow-hidden transition-all duration-300 h-full hover:shadow-lg hover:-translate-y-1 border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-      <Link href={`/products/${product.slug}`}>
-        <div className="relative pt-[100%] overflow-hidden rounded-t-lg">
-          {/* Product Image */}
-          <Image
-            src={getOptimizedCloudinaryUrl(product.image, 400)}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-          
-          {/* Quick Actions */}
-          <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button 
-              size="icon" 
-              variant="outline" 
-              className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
-              onClick={handleAddToWishlist}
-            >
-              <Heart 
-                className={`h-3.5 w-3.5 ${isWishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`} 
-              />
-            </Button>
-            <Link href={`/products/${product.slug}`}>
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
-              >
-                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-              </Button>
-            </Link>
+      <div className="relative pt-[100%] overflow-hidden rounded-t-lg" style={{ position: 'relative' }}>
+        {/* Product Image */}
+        <Image
+  src={getOptimizedCloudinaryUrl(product.image || '/fallback.png', 400)}
+  alt={product.name}
+  fill
+  className="object-cover transition-transform duration-500 group-hover:scale-110"
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+/>
+        {/* Quick Actions */}
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
+            onClick={e => { e.preventDefault(); e.stopPropagation(); handleAddToWishlist(e); }}
+          >
+            <Heart
+              className={`h-3.5 w-3.5 ${isWishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'}`}
+            />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
+            onClick={e => { e.preventDefault(); e.stopPropagation(); window.location.href = `/products/${product.slug}`; }}
+          >
+            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </div>
+        {/* Discount Badge */}
+        {discountPercentage > 0 && (
+          <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-destructive text-white font-semibold shadow-lg">
+            -{discountPercentage}%
+          </Badge>
+        )}
+        {/* Featured Badge */}
+        {product.featured && (
+          <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-primary text-white font-semibold shadow-lg">
+            Featured
+          </Badge>
+        )}
+        {/* Out of Stock Overlay */}
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+            <Badge variant="outline" className="bg-background/90 text-base sm:text-lg py-2 px-4 font-semibold shadow-lg">
+              Out of Stock
+            </Badge>
           </div>
-          
-          {/* Discount Badge */}
-          {discountPercentage > 0 && (
-            <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-destructive text-white font-semibold shadow-lg">
-              -{discountPercentage}%
-            </Badge>
-          )}
-          
-          {/* Featured Badge */}
-          {product.featured && (
-            <Badge className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-primary text-white font-semibold shadow-lg">
-              Featured
-            </Badge>
-          )}
-          
-          {/* Out of Stock Overlay */}
-          {!product.inStock && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-              <Badge variant="outline" className="bg-background/90 text-base sm:text-lg py-2 px-4 font-semibold shadow-lg">
-                Out of Stock
-              </Badge>
-            </div>
+        )}
+      </div>
+      <CardContent className="p-3 sm:p-4">
+        <div className="text-xs sm:text-sm text-muted-foreground mb-1 uppercase tracking-wide font-medium">{product.category}</div>
+        <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-3 min-h-[2.5rem] sm:min-h-[3rem] leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toFixed(2)}</span>
+          {product.comparePrice && (
+            <span className="text-sm text-muted-foreground line-through">
+              ₹{product.comparePrice.toFixed(2)}
+            </span>
           )}
         </div>
-        
-        <CardContent className="p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-muted-foreground mb-1 uppercase tracking-wide font-medium">{product.category}</div>
-          <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-3 min-h-[2.5rem] sm:min-h-[3rem] leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toFixed(2)}</span>
-            {product.comparePrice && (
-              <span className="text-sm text-muted-foreground line-through">
-                ₹{product.comparePrice.toFixed(2)}
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Link>
-      
+      </CardContent>
       <CardFooter className="p-3 sm:p-4 pt-0">
-        <Button 
+        <Button
           className="w-full h-9 sm:h-10 font-semibold rounded-lg transition-all duration-300 hover:shadow-md"
           variant={isAddedToCart ? "outline" : "default"}
           disabled={!product.inStock || isAddedToCart}
-          onClick={handleAddToCart}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); handleAddToCart(e); }}
         >
           {isAddedToCart ? (
             <>
@@ -166,5 +159,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Button>
       </CardFooter>
     </Card>
+  </Link>
   );
 }

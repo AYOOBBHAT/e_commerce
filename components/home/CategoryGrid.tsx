@@ -42,10 +42,10 @@ const categoryData = [
 
 export default function CategoryGrid() {
   return (
-    <section className="py-8 sm:py-12 lg:py-16 bg-muted/50">
+  <section className="py-8 sm:py-12 lg:py-16 bg-white">
       <div className="container px-4 sm:px-6 lg:px-8 mx-auto">
-        <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+        <div className="text-center mb-6 sm:mb-10 lg:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-black bg-white w-full py-2">
             Shop by Category
           </h2>
         </div>

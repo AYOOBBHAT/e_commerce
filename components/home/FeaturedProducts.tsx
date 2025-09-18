@@ -3,6 +3,7 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import ProductGrid from '@/components/product/ProductGrid';
+import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 
@@ -16,9 +17,11 @@ export default function FeaturedProducts() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/admin/products');
+        const res = await fetch('/api/products');
         if (!res.ok) throw new Error('Failed to fetch products');
-        const data = await res.json();
+        let data = await res.json();
+        // Map images[0] to image for compatibility with ProductCard
+        data = data.map((p: any) => ({ ...p, image: p.images?.[0] || '' }));
         setProducts(data.filter((p: any) => p.featured));
       } catch (err: any) {
         setError(err.message || 'Error fetching products');
@@ -31,15 +34,15 @@ export default function FeaturedProducts() {
 
   return (
     <section className="py-12 md:py-16">
-      <div className="container px-4 mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+      <div className="container px-2 sm:px-4 mx-auto">
+        <div className="flex items-center justify-between mb-8 w-full">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold">Featured Products</h2>
-            <p className="text-muted-foreground mt-2">Handpicked favorites just for you</p>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black bg-white w-full py-2">Featured Products</h2>
+            <p className="mt-2 text-black bg-white w-full py-1">Handpicked favorites just for you</p>
           </div>
-          <Link href="/products" className="mt-4 md:mt-0">
+          <Link href="/products" className="ml-2">
             <Button variant="outline" className="group">
-              View All 
+              View All
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
@@ -49,7 +52,15 @@ export default function FeaturedProducts() {
         ) : error ? (
           <div className="p-6 text-center text-destructive">{error}</div>
         ) : (
-          <ProductGrid products={products} />
+          <div className="overflow-x-auto pb-2 -mx-2 sm:-mx-4">
+            <div className="flex gap-4 px-2 sm:px-4 w-full">
+              {products.map((product) => (
+                <div key={product._id || product.id || product.slug} className="min-w-[70vw] sm:min-w-[220px] max-w-xs flex-shrink-0">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </section>

@@ -24,10 +24,22 @@ export default function AddProductPage() {
     category: PRODUCT_CATEGORIES[0]?.id || "",
     quantity: "",
     image: "",
+    featured: false,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, type, value } = e.target;
+    if (type === 'checkbox') {
+      setForm({
+        ...form,
+        [name]: (e.target as HTMLInputElement).checked,
+      });
+    } else {
+      setForm({
+        ...form,
+        [name]: value,
+      });
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +80,7 @@ export default function AddProductPage() {
           quantity: parseInt(form.quantity, 10),
           images: form.image ? [form.image] : [],
           inStock: parseInt(form.quantity, 10) > 0,
+          featured: form.featured,
         }),
       });
       if (!res.ok) {
@@ -125,6 +138,17 @@ export default function AddProductPage() {
               <Image src={form.image} alt="Product" width={96} height={96} className="rounded border" />
             </div>
           )}
+        </div>
+        <div>
+          <Label htmlFor="featured">Featured Product</Label>
+          <input
+            id="featured"
+            name="featured"
+            type="checkbox"
+            checked={form.featured}
+            onChange={handleChange}
+            className="ml-2"
+          />
         </div>
         <Button type="submit" disabled={isLoading || imageUploading} className="w-full">
           {isLoading ? "Adding..." : "Add Product"}

@@ -22,6 +22,8 @@ export async function middleware(request: NextRequest) {
     pathname === '/register'
     || pathname === '/forgot-password'
     || pathname === '/reset-password'
+    || pathname === '/api/products'
+    || pathname.startsWith('/api/products/')
   ) {
     return NextResponse.next();
   }
@@ -34,9 +36,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Admin routes - admin role required
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
-    const session = await decrypt(token);
+  // Allow public GET requests to /api/admin/products and /api/admin/products/[id]
+  if (pathname.startsWith('/api/admin/products')) {
+    if (request.method === 'GET') {
+      return NextResponse.next();
+    }
+    // For non-GET methods, require admin
+    const session = token ? await decrypt(token) : null;
+    if (!session || session.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  } else if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    // All other /admin and /api/admin routes require admin
+    const session = token ? await decrypt(token) : null;
     if (!session || session.role !== 'admin') {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

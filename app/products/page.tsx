@@ -13,7 +13,7 @@ export default function ProductsPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/admin/products');
+        const res = await fetch('/api/products');
         if (!res.ok) throw new Error('Failed to fetch products');
         let data = await res.json();
         // Map images[0] to image for compatibility with ProductCard
