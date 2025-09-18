@@ -29,8 +29,8 @@ export default function ProductsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">All Products</h1>
+  <div className="container mx-auto px-4 py-12 bg-white text-black rounded-lg shadow-sm" style={{ color: '#000' }}>
+  <h1 className="text-2xl md:text-3xl font-bold mb-6 text-black" style={{ color: '#000' }}>All Products</h1>
       {loading ? (
         <div className="p-6 text-center">Loading products...</div>
       ) : error ? (
