@@ -7,7 +7,6 @@ import { PRODUCT_CATEGORIES } from '@/lib/constants'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary'
 
 
-// Extended category data with images for display
 const categoryData = [
   {
     ...PRODUCT_CATEGORIES[0],
@@ -17,27 +16,27 @@ const categoryData = [
   {
     ...PRODUCT_CATEGORIES[2],
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/v1758045443/pic3_uzp45k.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
   {
     ...PRODUCT_CATEGORIES[1],
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/v1758045426/pic1_jmc0tl.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
   {
     ...PRODUCT_CATEGORIES[3],
     image:
-      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758041437/SEEDS_1536_1024_jshe8s.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
   {
     ...PRODUCT_CATEGORIES[5],
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/v1758045443/pic3_uzp45k.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
   {
     ...PRODUCT_CATEGORIES[4],
     image:
-      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758023742/seeds_new_qvnbtc.png',
+      'https://res.cloudinary.com/dksecqzvv/image/upload/c_pad,ar_1:1/v1758087751/new_img_s4rv89.png',
   },
 ]
 
