@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ProductGrid from '@/components/product/ProductGrid';
+import ProductCard from '@/components/product/ProductCard';
 
 export default function CategoryProductsPage() {
   const params = useParams();
@@ -35,9 +36,13 @@ export default function CategoryProductsPage() {
   if (!products.length) return <div className="p-6 text-center">No products found in this category.</div>;
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 capitalize">{category} Products</h1>
-      <ProductGrid products={products} />
+    <div className="container mx-auto px-4 py-12 bg-white text-black rounded-lg shadow-sm">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 capitalize text-black bg-white w-full py-2" style={{ color: '#000' }}>{category} Products</h1>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {products.map((product) => (
+          <ProductCard key={product._id || product.id || product.slug} product={product} />
+        ))}
+      </div>
     </div>
   );
 }

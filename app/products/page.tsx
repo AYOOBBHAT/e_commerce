@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ProductGrid from '@/components/product/ProductGrid';
+import ProductCard from '@/components/product/ProductCard';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -30,7 +31,7 @@ export default function ProductsPage() {
 
   return (
   <div className="container mx-auto px-4 py-12 bg-white text-black rounded-lg shadow-sm" style={{ color: '#000' }}>
-  <h1 className="text-2xl md:text-3xl font-bold mb-6 text-black" style={{ color: '#000' }}>All Products</h1>
+  <h1 className="text-2xl md:text-3xl font-bold mb-6 text-black bg-white w-full py-2" style={{ color: '#000' }}>All Products</h1>
       {loading ? (
         <div className="p-6 text-center">Loading products...</div>
       ) : error ? (
@@ -38,7 +39,11 @@ export default function ProductsPage() {
       ) : !products.length ? (
         <div className="p-6 text-center">No products found.</div>
       ) : (
-        <ProductGrid products={products} />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {products.map((product) => (
+            <ProductCard key={product._id || product.id || product.slug} product={product} />
+          ))}
+        </div>
       )}
     </div>
   );

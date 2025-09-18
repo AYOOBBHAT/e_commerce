@@ -40,7 +40,7 @@ export default function FeaturedProducts() {
             <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black bg-white w-full py-2">Featured Products</h2>
             <p className="mt-2 text-black bg-white w-full py-1">Handpicked favorites just for you</p>
           </div>
-          <Link href="/products" className="ml-2">
+          <Link href="/products/featured" className="ml-2">
             <Button variant="outline" className="group">
               View All
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
