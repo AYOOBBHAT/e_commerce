@@ -35,32 +35,44 @@ export default function FeaturedProducts() {
   return (
     <section className="py-12 md:py-16">
       <div className="container px-2 sm:px-4 mx-auto">
-        <div className="flex items-center justify-between mb-8 w-full">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black bg-white w-full py-2">Featured Products</h2>
-            <p className="mt-2 text-black bg-white w-full py-1">Handpicked favorites just for you</p>
-          </div>
-          <Link href="/products/featured" className="ml-2">
-            <Button variant="outline" className="group">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-black">Featured Products</h2>
+          <Link href="/products/featured">
+            <Button
+              variant="outline"
+              className="group bg-white text-black border border-gray-300 hover:bg-gray-100"
+            >
               View All
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 text-black" />
             </Button>
           </Link>
         </div>
+
+        {/* Content */}
         {loading ? (
           <div className="p-6 text-center">Loading products...</div>
         ) : error ? (
           <div className="p-6 text-center text-destructive">{error}</div>
         ) : (
-          <div className="overflow-x-auto pb-2 -mx-2 sm:-mx-4">
-            <div className="flex gap-4 px-2 sm:px-4 w-full">
+          <>
+            {/* Mobile: scrollable row */}
+            <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
               {products.map((product) => (
-                <div key={product._id || product.id || product.slug} className="min-w-[70vw] sm:min-w-[220px] max-w-xs flex-shrink-0">
+                <div
+                  key={product._id || product.id || product.slug}
+                  className="min-w-[70vw] max-w-xs flex-shrink-0"
+                >
                   <ProductCard product={product} />
                 </div>
               ))}
             </div>
-          </div>
+
+            {/* Desktop: grid layout */}
+            <div className="hidden sm:block">
+              <ProductGrid products={products} columns={3} />
+            </div>
+          </>
         )}
       </div>
     </section>

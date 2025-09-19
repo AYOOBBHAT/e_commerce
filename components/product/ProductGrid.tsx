@@ -34,21 +34,10 @@ export default function ProductGrid({ products, columns = 3 }: ProductGridProps)
   }
 
   return (
-    <div>
-      {/* Mobile: horizontal scroll */}
-      <div className="flex gap-4 overflow-x-auto pb-2 sm:hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {products.map((product) => (
-          <div className="min-w-[80vw] max-w-xs flex-shrink-0" key={product._id || product.id || product.slug}>
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
-      {/* Desktop: grid */}
-      <div className={`hidden sm:grid ${gridClass} gap-4 sm:gap-6 lg:gap-8`}>
-        {products.map((product) => (
-          <ProductCard key={product._id || product.id || product.slug} product={product} />
-        ))}
-      </div>
+    <div className={`grid ${gridClass} gap-4 sm:gap-6 lg:gap-8`}>
+      {products.map((product) => (
+        <ProductCard key={product._id || product.id || product.slug} product={product} />
+      ))}
     </div>
   );
 }
