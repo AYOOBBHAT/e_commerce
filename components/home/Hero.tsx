@@ -11,9 +11,9 @@ const slides = [
   {
     id: 1,
     desktopImage:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/v1758351896/Gemini_Generated_Image_xt1qg3xt1qg3xt1q_x0jmih.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950829/2560x1097_saffron_gxtqnn.png',
     mobileImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1080,h_1350,c_fill/mobile1.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950835/1080x1440_saffron_hufr0n.png',
     title: 'Spring Collection 2025',
     subtitle: 'Discover fresh styles for the new season',
     cta: 'Shop Now',
@@ -24,9 +24,9 @@ const slides = [
   {
     id: 2,
     desktopImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1920,h_1080,c_fill/desktop2.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950995/mamra_and_walnut_2560x1097_tyovbd.png',
     mobileImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1080,h_1350,c_fill/mobile2.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950883/1080x1440_walnut_kernels_weh9kv.png',
     title: 'Tech Innovations',
     subtitle: 'Latest gadgets that make life easier',
     cta: 'Shop Now',
@@ -37,9 +37,9 @@ const slides = [
   {
     id: 3,
     desktopImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1920,h_1080,c_fill/desktop2.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758951179/chocosms2560x1097_ivkzqc.png',
     mobileImage:
-      'https://res.cloudinary.com/demo/image/upload/w_1080,h_1350,c_fill/mobile2.jpg',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950845/1080x1440_handmade_zrombz.png',
     title: 'Tech Innovations',
     subtitle: 'Latest gadgets that make life easier',
     cta: 'Shop Now',
