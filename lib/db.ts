@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 
-// Only ONE definition for MONGODB_URI
-const MONGODB_URI= process.env.MONGODB_URI;
-
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
