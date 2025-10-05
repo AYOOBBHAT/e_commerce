@@ -5,67 +5,71 @@ import { PRODUCT_CATEGORIES } from '@/lib/constants'
 
 const categoryData = [
   {
-    ...PRODUCT_CATEGORIES[0],
+    ...PRODUCT_CATEGORIES[0], // Healthy Handmade
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759654486/handmade_healthy_bites_1-1_zf5dhi.png',
   },
   {
-    ...PRODUCT_CATEGORIES[2],
+    ...PRODUCT_CATEGORIES[1], // Customised Handmade
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759654138/customised_1-1_aykhal.png',
   },
   {
-    ...PRODUCT_CATEGORIES[1],
+    ...PRODUCT_CATEGORIES[2], // Kashmiri Delights
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759648422/1000_1000_delights_rlz3k5.png',
   },
   {
-    ...PRODUCT_CATEGORIES[3],
+    ...PRODUCT_CATEGORIES[3], // Seeds
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759648607/seeds_1000_1000_pa7qn7.png',
   },
   {
-    ...PRODUCT_CATEGORIES[5],
+    ...PRODUCT_CATEGORIES[4], // Spices
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759653046/spices_1-1_yiyt3i.png',
   },
   {
-    ...PRODUCT_CATEGORIES[4],
+    ...PRODUCT_CATEGORIES[5], // Farm Fresh
     image:
-      'https://res.cloudinary.com/dksecqzvv/image/upload/c_fill,ar_1:1/v1758087751/new_img_s4rv89.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/c_fill,ar_1:1,f_auto,q_auto/v1759653567/1-1_farm_fresh_g9yavk.png',
   },
 ]
+
 
 export default function CategoryGrid() {
   return (
     <section className="py-8 sm:py-12 lg:py-16 bg-white">
       <div className="container px-4 sm:px-6 lg:px-8 mx-auto">
+        {/* Section Heading */}
         <div className="text-center mb-6 sm:mb-10 lg:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black">
             Shop by Category
           </h2>
         </div>
 
+        {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {categoryData.map((category) => (
             <Link
               key={category.id}
               href={`/category/${category.id}`}
-              className="group relative rounded-xl overflow-hidden aspect-square w-full shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+              className="group relative rounded-xl overflow-hidden aspect-square w-full shadow-md transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-95"
             >
               {/* Image */}
               <Image
                 src={category.image}
                 alt={category.name}
                 fill
-                className="object-contain p-4 bg-white"
+                className="object-contain bg-white p-4"
                 sizes="(max-width: 640px) 100vw,
                        (max-width: 1024px) 50vw,
                        (max-width: 1280px) 33vw,
                        25vw"
+                priority={true}
               />
 
-              {/* Overlay gradient for better text visibility */}
+              {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
               {/* Category Label */}

@@ -1,12 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Example slides – replace desktopImage/mobileImage with your own
 const slides = [
   {
     id: 1,
@@ -14,25 +12,13 @@ const slides = [
       'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950829/2560x1097_saffron_gxtqnn.png',
     mobileImage:
       'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950835/1080x1440_saffron_hufr0n.png',
-    title: 'Spring Collection 2025',
-    subtitle: 'Discover fresh styles for the new season',
-    cta: 'Shop Now',
-    url: '/category/clothing',
-    position: 'right',
-    theme: 'light',
   },
   {
     id: 2,
     desktopImage:
-      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950995/mamra_and_walnut_2560x1097_tyovbd.png',
+      'https://res.cloudinary.com/dfocwbzzo/image/upload/v1759163431/desktop_background_removed_giaaa7.png',
     mobileImage:
       'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950883/1080x1440_walnut_kernels_weh9kv.png',
-    title: 'Tech Innovations',
-    subtitle: 'Latest gadgets that make life easier',
-    cta: 'Shop Now',
-    url: '/category/electronics',
-    position: 'right',
-    theme: 'light',
   },
   {
     id: 3,
@@ -40,14 +26,7 @@ const slides = [
       'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758951179/chocosms2560x1097_ivkzqc.png',
     mobileImage:
       'https://res.cloudinary.com/dfocwbzzo/image/upload/v1758950845/1080x1440_handmade_zrombz.png',
-    title: 'Tech Innovations',
-    subtitle: 'Latest gadgets that make life easier',
-    cta: 'Shop Now',
-    url: '/category/electronics',
-    position: 'right',
-    theme: 'light',
   },
-
 ]
 
 export default function Hero() {
@@ -77,64 +56,30 @@ export default function Hero() {
     return () => clearInterval(interval)
   }, [goToNext])
 
-  const slide = slides[current]
-  const textColorClass = slide.theme === 'dark' ? 'text-white' : 'text-gray-900'
-
-  let positionClass = 'items-center justify-center text-center'
-  if (slide.position === 'left') {
-    positionClass = 'items-center justify-start text-left md:pl-16'
-  } else if (slide.position === 'right') {
-    positionClass = 'items-center justify-end text-right md:pr-16'
-  }
-
   return (
     <div className="relative h-[60vh] sm:h-[70vh] lg:h-[80vh] min-h-[400px] sm:min-h-[500px] max-h-[800px] overflow-hidden bg-white">
       {slides.map((s, index) => (
         <div
           key={s.id}
           className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            index === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            index === current
+              ? 'opacity-100 z-10 pointer-events-auto'
+              : 'opacity-0 z-0 pointer-events-none'
           }`}
         >
-          {/* Responsive Images (desktop + mobile) */}
-          <picture>
-            <source media="(max-width: 640px)" srcSet={s.mobileImage} />
-            <Image
-              src={s.desktopImage}
-              alt={s.title}
-              fill
-              priority={index === current}
-              className="object-cover"
-              sizes="100vw"
-            />
-          </picture>
-
-          {/* Content */}
-          <div
-            className={`container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col ${positionClass}`}
-          >
-            <div className="max-w-2xl lg:max-w-3xl">
-              <h1
-                className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight ${textColorClass}`}
-              >
-                {s.title}
-              </h1>
-              <p
-                className={`text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 leading-relaxed ${
-                  s.theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}
-              >
-                {s.subtitle}
-              </p>
-              <Link href={s.url}>
-                <Button
-                  size="lg"
-                  className="h-12 px-8 text-base sm:text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-black text-white border-2 border-black hover:bg-white hover:text-black"
-                >
-                  {s.cta}
-                </Button>
-              </Link>
-            </div>
+          {/* Responsive Images */}
+          <div className="absolute inset-0">
+            <picture>
+              <source media="(max-width: 640px)" srcSet={s.mobileImage} />
+              <Image
+                src={s.desktopImage}
+                alt="Slide image"
+                fill
+                priority={index === current}
+                className="object-cover"
+                sizes="100vw"
+              />
+            </picture>
           </div>
         </div>
       ))}
@@ -165,7 +110,7 @@ export default function Hero() {
             key={index}
             className={`h-2 rounded-full transition-all ${
               index === current
-                ? 'w-6 sm:w-8 bg-primary'
+                ? 'w-6 sm:w-8 bg-white'
                 : 'w-2 bg-white/50 hover:bg-white/70'
             }`}
             onClick={() => goToSlide(index)}

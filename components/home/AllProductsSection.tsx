@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ProductGrid from '@/components/product/ProductGrid';
 import ProductCard from '@/components/product/ProductCard';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 export default function AllProductsSection({ category }: { category?: string }) {
   const [products, setProducts] = useState<any[]>([]);
@@ -36,36 +38,57 @@ export default function AllProductsSection({ category }: { category?: string }) 
     fetchProducts();
   }, [category]);
 
-  if (loading) return <div className="p-6 text-center">Loading products...</div>;
-  if (error) return <div className="p-6 text-center text-destructive">{error}</div>;
-  if (!products.length) return <div className="p-6 text-center">No products found.</div>;
-
   return (
     <section className="py-12 md:py-16">
       <div className="container px-2 sm:px-4 mx-auto">
-        {/* Title + View All */}
-        <div className="flex justify-between items-center mb-8 w-full">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-black">All Products</h2>
-          <a href="/products">
-            <button className="border rounded px-4 py-2 bg-white text-black font-semibold shadow border-gray-200 hover:bg-gray-100">
-              View All <span className="ml-2 text-black">→</span>
-            </button>
-          </a>
+          <Link href="/products">
+            <Button
+              variant="outline"
+              className="group bg-white text-black border border-gray-300 hover:bg-gray-100"
+            >
+              View All
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 text-black" />
+            </Button>
+          </Link>
         </div>
 
-        {/* Horizontal scroll */}
-        <div className="overflow-x-auto pb-2 -mx-2 sm:-mx-4">
-          <div className="flex gap-4 px-2 sm:px-4 w-full">
-            {products.map((product) => (
-              <div
-                key={product._id || product.id || product.slug}
-                className="min-w-[60vw] sm:min-w-[220px] max-w-xs flex-shrink-0"
-              >
-                <ProductCard product={product} />
+        {/* Content */}
+        {loading ? (
+          <div className="p-6 text-center">Loading products...</div>
+        ) : error ? (
+          <div className="p-6 text-center text-destructive">{error}</div>
+        ) : !products.length ? (
+          <div className="p-6 text-center">No products found.</div>
+        ) : (
+          <>
+            {/* Mobile: scrollable row */}
+            <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
+              {products.map((product) => (
+                <div
+                  key={product._id || product.id || product.slug}
+                  className="min-w-[70vw] max-w-xs flex-shrink-0"
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: grid layout */}
+            <div className="hidden sm:block">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product._id || product.id || product.slug}
+                    product={product}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
