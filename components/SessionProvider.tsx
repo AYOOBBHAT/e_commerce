@@ -27,7 +27,9 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   const checkSession = async () => {
     try {
-      const response = await fetch('/api/auth/session');
+      // include credentials so the cookie set by the server is sent with the request
+      // use no-store to avoid any cached response from Next.js
+      const response = await fetch('/api/auth/session', { credentials: 'include', cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (data.user) {
@@ -64,6 +66,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   const refreshSession = async () => {
     setIsLoading(true);
+    // force fresh fetch
     await checkSession();
   };
 

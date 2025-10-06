@@ -51,6 +51,10 @@ export default function Login() {
         headers: {
           'Content-Type': 'application/json',
         },
+        // include credentials so the browser accepts Set-Cookie from the server
+        credentials: 'include',
+        // avoid any cached responses when logging in
+        cache: 'no-store',
         body: JSON.stringify(data),
       });
       

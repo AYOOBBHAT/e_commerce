@@ -14,11 +14,11 @@ export async function GET(
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
-        { status: 404 }
+        { status: 404, headers: { 'Cache-Control': 'no-store' } }
       );
     }
     
-    return NextResponse.json(product);
+    return NextResponse.json(product, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(
@@ -37,7 +37,7 @@ export async function PATCH(
     if (!session?.userId || session.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
       );
     }
 
@@ -53,11 +53,11 @@ export async function PATCH(
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
-        { status: 404 }
+        { status: 404, headers: { 'Cache-Control': 'no-store' } }
       );
     }
     
-    return NextResponse.json(product);
+    return NextResponse.json(product, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json(
@@ -76,7 +76,7 @@ export async function DELETE(
     if (!session?.userId || session.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
       );
     }
 
@@ -86,11 +86,14 @@ export async function DELETE(
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
-        { status: 404 }
+        { status: 404, headers: { 'Cache-Control': 'no-store' } }
       );
     }
     
-    return NextResponse.json({ message: 'Product deleted successfully' });
+    return NextResponse.json(
+      { message: 'Product deleted successfully' },
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
   } catch (error) {
     console.error('Error deleting product:', error);
     return NextResponse.json(
