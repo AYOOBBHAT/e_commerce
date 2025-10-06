@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
-import { getServerSession } from '@/lib/auth';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+import { getServerSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,13 +13,29 @@ export async function POST(request: NextRequest) {
     }
 
     const { amount } = await request.json();
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const isDummy = !keyId || keyId === 'placeholder' || !keySecret || keySecret === 'placeholder';
 
+    if (isDummy) {
+      // Return fake order for test mode
+      return NextResponse.json({
+        id: 'order_test',
+        amount: amount * 100,
+        currency: 'INR',
+        receipt: `order_${Date.now()}`,
+        status: 'created',
+        testMode: true
+      });
+    }
+
+    const Razorpay = (await import('razorpay')).default;
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const order = await razorpay.orders.create({
-      amount: amount * 100, // Convert to paise
+      amount: amount * 100,
       currency: 'INR',
       receipt: `order_${Date.now()}`,
     });
-
     return NextResponse.json(order);
   } catch (error) {
     console.error('Razorpay error:', error);

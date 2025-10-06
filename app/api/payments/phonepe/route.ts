@@ -10,10 +10,19 @@ const BASE_URL = 'https://api.phonepe.com/apis/hermes';
 export async function POST(req: Request) {
   try {
     const { amount, orderId, redirectUrl } = await req.json();
-    if (!amount || !orderId || !redirectUrl) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const isDummy = !PHONEPE_MERCHANT_ID || PHONEPE_MERCHANT_ID === 'placeholder' || !PHONEPE_SALT_KEY || PHONEPE_SALT_KEY === 'placeholder' || !PHONEPE_SALT_INDEX || PHONEPE_SALT_INDEX === 'placeholder';
+
+    if (isDummy) {
+      // Return fake response for test mode
+      return NextResponse.json({
+        merchantTransactionId: orderId,
+        amount: amount * 100,
+        status: 'created',
+        testMode: true
+      });
     }
 
+    // ...existing code...
     // Prepare payload
     const payload = {
       merchantId: PHONEPE_MERCHANT_ID,
