@@ -16,7 +16,7 @@ export default function AllProductsSection({ category }: { category?: string }) 
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/products');
+  const res = await fetch('/api/products', { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to fetch products');
         let data = await res.json();
 

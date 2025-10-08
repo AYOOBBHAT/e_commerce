@@ -6,7 +6,7 @@ export async function GET() {
   try {
     await connectToDatabase();
   const products = await Product.find().sort({ createdAt: -1 });
-  // Public product listing: short CDN cache with stale-while-revalidate for performance
+  // Public product listing: short CDN cache for speed, but revalidate quickly
   return NextResponse.json(products, {
     headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
   });

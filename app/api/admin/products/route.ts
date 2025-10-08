@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
@@ -32,7 +33,15 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     
   const product = await Product.create(data);
-  return NextResponse.json(product, { status: 201, headers: { 'Cache-Control': 'no-store' } });
+  // Revalidate public product listing so the new product shows up immediately
+  try {
+    revalidatePath('/products');
+    // Also revalidate the product detail page (slug) so the product page is fresh
+    if (product?.slug) revalidatePath(`/products/${product.slug}`);
+  } catch (e) {
+    console.warn('revalidatePath failed:', e);
+  }
+  return NextResponse.json(product, { status: 201, headers: { 'Cache-Control': 'no-store', 'x-revalidated': `products,products/${product?.slug || ''}` } });
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json(
