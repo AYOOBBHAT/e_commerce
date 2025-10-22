@@ -103,7 +103,7 @@ export default function ProductsTable() {
                 </div>
               </TableCell>
               <TableCell>{product.category}</TableCell>
-              <TableCell>${product.price?.toFixed(2)}</TableCell>
+              <TableCell>₹{product.price?.toFixed(2)}</TableCell>
               <TableCell>{product.quantity}</TableCell>
               <TableCell>
                 <Badge variant={product.inStock ? 'default' : 'destructive'}>
