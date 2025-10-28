@@ -60,29 +60,29 @@ export default function Footer() {
             <h3 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">Quick Links</h3>
             <ul className="space-y-2 sm:space-y-3">
               <li>
-                <a href="https://docs.google.com/document/d/1El6sSJKxkxNPV0tb-yv5sKjF3v4wcjUw/edit?usp=drivesdk&ouid=114474855162308920449&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                <Link href="/quick-links/about-us" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="https://docs.google.com/document/d/1mbWfl3Pqs_iVZU5AB4yiyTMquGOBWD8X/edit?usp=drivesdk&ouid=114474855162308920449&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                <Link href="/quick-links/privacy-policy" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="https://docs.google.com/document/d/1xBu-NolfzJzceszTnQ9UehEb7Aza2V8r/edit?usp=drivesdk&ouid=114474855162308920449&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                <Link href="/quick-links/faq" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="https://docs.google.com/document/d/1KxzpfX9AUz2SB178hggaZtKZ14iMKhOq/edit?usp=drivesdk&ouid=114474855162308920449&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                <Link href="/quick-links/terms" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   Terms & Conditions
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="https://docs.google.com/document/d/1YGUHZgmC653AKGO2govIXDGrx5SIleHy/edit?usp=drivesdk&ouid=114474855162308920449&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                <Link href="/quick-links/shipping-returns" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   Shipping & Returns
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
