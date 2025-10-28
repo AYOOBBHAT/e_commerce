@@ -15,16 +15,17 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
-  pathname.startsWith('/api/debug') ||
+    pathname.startsWith('/api/debug') ||
     pathname === '/' ||
     pathname.startsWith('/products') ||
     pathname.startsWith('/category') ||
+    pathname.startsWith('/quick-links') ||
     pathname === '/login' ||
-    pathname === '/register'
-    || pathname === '/forgot-password'
-    || pathname === '/reset-password'
-    || pathname === '/api/products'
-    || pathname.startsWith('/api/products/')
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname === '/api/products' ||
+    pathname.startsWith('/api/products/')
   ) {
     return NextResponse.next();
   }
