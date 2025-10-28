@@ -2,9 +2,9 @@ export default function AboutUsPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold mb-10">About Us</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-10 text-gray-900 dark:text-gray-100">About Us</h1>
 
-        <div className="space-y-8 text-foreground leading-relaxed">
+        <div className="space-y-8 text-gray-800 dark:text-gray-200 leading-relaxed">
           <section>
             <p className="text-lg mb-4">
               Welcome to <strong>ZeeShaEla & Co</strong>, the home of our proudly crafted brand <strong>Zescoh</strong>.
@@ -19,7 +19,7 @@ export default function AboutUsPage() {
           </section>
 
           <section className="mt-10">
-            <h2 className="text-3xl font-bold mb-5">Zescoh Handmade</h2>
+            <h2 className="text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Zescoh Handmade</h2>
             <p className="text-lg mb-4">
               Under our Handmade Section, we craft wholesome treats using only the best quality dry fruits,
               pure desi ghee, and absolutely <strong>no sugar, no preservatives, and no chemicals</strong>.
@@ -34,7 +34,7 @@ export default function AboutUsPage() {
           </section>
 
           <section className="mt-10">
-            <h2 className="text-3xl font-bold mb-5">Why Choose Us</h2>
+            <h2 className="text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Why Choose Us</h2>
             <ul className="space-y-4 text-lg ml-4">
               <li>
                 <strong>Purity & Quality:</strong> Every product is made with uncompromising quality standards.
