@@ -6,50 +6,57 @@ export default function AboutUsPage() {
 
         <div className="prose prose-lg max-w-none space-y-6">
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Our Story</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Welcome to our online store! We are a dedicated team passionate about bringing you
-              quality products at affordable prices. Since our founding in 2025, we've been committed
-              to providing exceptional customer service and a seamless shopping experience.
+            <p className="text-muted-foreground leading-relaxed text-lg">
+              Welcome to ZeeShaEla & Co, the home of our proudly crafted brand <strong>Zescoh</strong>.
+              At Zescoh, we bring together tradition, purity, and innovation to create products that
+              celebrate the true essence of nature.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              We specialize in premium dry fruits, spices, shilajit, saffron, tea, and pulses, carefully
+              sourced and packed with the highest standards of quality. Our mission is simple yet profound:
+              to pack the delight of nature's finest gifts and make them accessible and affordable for all.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
+            <h2 className="text-2xl font-semibold mb-4">Zescoh Handmade</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Our mission is to make online shopping easy, convenient, and enjoyable for everyone.
-              We carefully curate our product selection to ensure that every item meets our high
-              standards of quality and value.
+              Under our Handmade Section, we craft wholesome treats using only the best quality dry fruits,
+              pure desi ghee, and absolutely no sugar, no preservatives, and no chemicals. This makes our
+              products a healthy and affordable alternative to market sweets and chocolates.
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Why Choose Us</h2>
-            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-              <li>Wide selection of quality products</li>
-              <li>Competitive pricing</li>
-              <li>Fast and reliable shipping</li>
-              <li>Secure payment options</li>
-              <li>Dedicated customer support</li>
-              <li>Easy returns and exchanges</li>
+            <p className="text-muted-foreground leading-relaxed mt-4 font-medium">
+              Our handmade range includes:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-muted-foreground mt-2">
+              <li><strong>Luddus</strong> – power-packed with nutrition and taste</li>
+              <li><strong>Chocolates</strong> – indulgent yet guilt-free</li>
+              <li><strong>Panjeeri</strong> – a traditional wellness delight</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Our Values</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We believe in transparency, integrity, and putting our customers first. Every decision
-              we make is guided by our commitment to providing you with the best possible shopping
-              experience. We're constantly working to improve our services and expand our product
-              offerings to meet your needs.
-            </p>
+            <h2 className="text-2xl font-semibold mb-4">Why Choose Us</h2>
+            <ul className="list-disc list-inside space-y-3 text-muted-foreground">
+              <li>
+                <strong>Purity & Quality:</strong> Every product is made with uncompromising quality standards.
+              </li>
+              <li>
+                <strong>State-of-the-Art Packaging:</strong> We use modern, hygienic, and innovative packaging
+                to preserve freshness.
+              </li>
+              <li>
+                <strong>Specialties:</strong> From our Shilajit to handmade luddus and chocolates, we offer
+                products that are rooted in tradition yet crafted for modern lifestyles.
+              </li>
+            </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Have questions or feedback? We'd love to hear from you! Reach out to our customer
-              support team, and we'll be happy to assist you with any inquiries you may have.
+            <p className="text-muted-foreground leading-relaxed text-lg">
+              At Zescoh, we believe food is more than just consumption—it's health, culture, and joy shared
+              with loved ones. We are committed to delivering not just products, but experiences filled with
+              authenticity and trust.
             </p>
           </section>
         </div>
