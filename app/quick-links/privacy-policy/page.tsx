@@ -2,9 +2,9 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold mb-10">Privacy Statement</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-10 text-gray-900 dark:text-gray-100">Privacy Statement</h1>
 
-        <div className="space-y-8 leading-relaxed text-base md:text-lg">
+        <div className="space-y-8 leading-relaxed text-base md:text-lg text-gray-700 dark:text-gray-300">
           <p className="text-sm mb-8">
             Last Updated: September 7, 2025
           </p>
@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Your Privacy</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Your Privacy</h2>
             <p className="mb-4">
               We recognize that when you choose to provide us with information about yourself, you trust us to act in a responsible manner.
             </p>
@@ -26,14 +26,14 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">What Information Do We Collect and How Do We Use It</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">What Information Do We Collect and How Do We Use It</h2>
             <p className="mb-4">
               At times we may request that you voluntarily supply with your personal information when you register for an online service, when you provide information in connection with an online transaction or when you contact us in relation to the Website or our services. We may gather information about you, when you visit our website www.zescohnuts.com, purchase our products, or interact with us through phone, email, or WhatsApp. By using our website or services, you consent to the terms of this Privacy Policy.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Information We Collect</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Information We Collect</h2>
 
             <h3 className="text-xl font-bold mb-3 mt-6">a) Personal Information</h3>
             <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">How We Use Your Information</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">How We Use Your Information</h2>
             <p className="mb-3">We use your information for purposes including:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Processing and delivering your orders</li>
@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Sharing of Information</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Sharing of Information</h2>
             <p className="mb-3">We do not sell or rent your personal data. However, we may share your information with:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Trusted third-party service providers (delivery partners, payment gateways, IT support)</li>
@@ -78,14 +78,14 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Cookies and Tracking Technologies</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Cookies and Tracking Technologies</h2>
             <p>
               Our website may use cookies to improve user experience, analyze traffic, and personalize content. You may disable cookies in your browser settings, but some website features may not work properly.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Data Protection & Security</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Data Protection & Security</h2>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>We follow reasonable security practices as per Indian IT Rules, 2011.</li>
               <li>Your data is stored securely with restricted access.</li>
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Your Rights</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Your Rights</h2>
             <p className="mb-3">As per data protection laws, we recognise your right to:</p>
             <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
               <li>Access, update, or correct your personal data</li>
@@ -105,14 +105,14 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Third-Party Links</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Third-Party Links</h2>
             <p>
               Our website may contain links to third-party websites. We are not responsible for their privacy practices.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">How We Use Your Information for Marketing</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">How We Use Your Information for Marketing</h2>
             <p className="mb-4">
               We may share your information within affiliated organizations and with our business partners for marketing purposes or we may send you information about other organizations' goods and services. We or any business partners may contact you, directly or via our agents, by mail, telephone, fax, email, SMS or other electronic messaging service with offers of goods and services or information that may be of interest to you. By providing us with your fax number, telephone numbers or email address you consent to being contacted by these methods for these purposes.
             </p>
@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Your Consent and Other People's Information</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Your Consent and Other People's Information</h2>
             <p className="mb-4">
               By providing us with your personal information, you consent to our processing your personal data, including sensitive personal data, for the above purposes. You also consent to our transferring your information to us or our service providers in India if necessary for the above purposes. If we do make such a transfer to our Third-Party service providers, we or they will, if appropriate, put a contract in place to ensure that your information is protected.
             </p>
@@ -135,28 +135,28 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Passwords</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Passwords</h2>
             <p>
               To bring you more personalized services, we may ask you to establish one or more passwords to gain access to certain services or sections in either our Website or the website(s) of other suppliers whose products or services are available to you via a link from our Website. You are solely responsible for the control and use of each password you create.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Unsubscribe / Changing Your Mailing Preferences</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Unsubscribe / Changing Your Mailing Preferences</h2>
             <p>
               If you have received an e-mail or e-mails from zescoh that you no longer wish to receive, please contact us at <strong>zeeshaela@zescohnuts.com</strong>
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Disclaimer</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Disclaimer</h2>
             <p>
               We link to other Websites. We are not responsible for the content or privacy policies of these websites for the way in which information about their users is treated. Unless expressly stated, we are not agents for these Websites or advertisers, nor are we authorized to make representations on their behalf. In any event, you should explore the privacy practices of those third parties.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Cookie Policy</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Cookie Policy</h2>
             <p className="mb-4">
               This website (www.zescohnuts.com) is operated by ZeeShaEla & Co. on behalf of ourselves and our affiliate partners (zescoh, "we", "our" or "us").
             </p>
@@ -195,7 +195,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Grievance Officer</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Grievance Officer</h2>
             <p className="mb-3">
               As per the Information Technology Act, 2000 and applicable rules, the Grievance Officer for ZeeShaEla & Co. is:
             </p>
@@ -205,7 +205,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Contact Us</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Contact Us</h2>
             <p className="mb-3">
               For any queries or concerns regarding this Privacy Policy, you can reach us at:
             </p>
@@ -216,7 +216,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-5">Changes to This Policy</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5 text-gray-900 dark:text-gray-100">Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated date of September 7, 2025.
             </p>
