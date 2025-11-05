@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
   const product = await Product.create(data);
   // Revalidate public product listing so the new product shows up immediately
   try {
+    // Revalidate all product-related paths
     revalidatePath('/products');
-    // Also revalidate the product detail page (slug) so the product page is fresh
+    revalidatePath('/products/featured');
     if (product?.slug) revalidatePath(`/products/${product.slug}`);
+    if (product?.category) revalidatePath(`/category/${product.category}`);
   } catch (e) {
     console.warn('revalidatePath failed:', e);
   }

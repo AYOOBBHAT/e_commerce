@@ -180,23 +180,12 @@ export default function Header({ user }: HeaderProps) {
                     </>
                   )}
                   <DropdownMenuItem>
-                    <Link href="/account/profile" className="flex w-full items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
                     <Link href="/account/orders" className="flex w-full items-center">
                       <PackageSearch className="mr-2 h-4 w-4" />
                       <span>My Orders</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/account/settings" className="flex w-full items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  {/* Profile and settings removed per request */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}
@@ -320,14 +309,7 @@ export default function Header({ user }: HeaderProps) {
                     Admin Dashboard
                   </Link>
                 )}
-                <Link 
-                  href="/account/profile"
-                  className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
+                {/* Profile removed from mobile menu per request */}
                 <Link 
                   href="/account/orders"
                   className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"

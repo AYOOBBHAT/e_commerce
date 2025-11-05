@@ -30,9 +30,15 @@ export async function GET(
     try {
       revalidatePath('/products');
       revalidatedPaths.push('/products');
+      revalidatePath('/products/featured');
+      revalidatedPaths.push('/products/featured');
       if (product?.slug) {
         revalidatePath(`/products/${product.slug}`);
         revalidatedPaths.push(`/products/${product.slug}`);
+      }
+      if (product?.category) {
+        revalidatePath(`/category/${product.category}`);
+        revalidatedPaths.push(`/category/${product.category}`);
       }
     } catch (e) {
       console.warn('revalidatePath failed:', e);
@@ -114,9 +120,15 @@ export async function DELETE(
     try {
       revalidatePath('/products');
       revalidated.push('/products');
+      revalidatePath('/products/featured');
+      revalidated.push('/products/featured');
       if (product?.slug) {
         revalidatePath(`/products/${product.slug}`);
         revalidated.push(`/products/${product.slug}`);
+      }
+      if (product?.category) {
+        revalidatePath(`/category/${product.category}`);
+        revalidated.push(`/category/${product.category}`);
       }
     } catch (e) {
       console.warn('revalidatePath failed:', e);

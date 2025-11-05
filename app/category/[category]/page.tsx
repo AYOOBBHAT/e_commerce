@@ -17,10 +17,11 @@ export default function CategoryProductsPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/admin/products');
+        const res = await fetch(`/api/products?category=${encodeURIComponent(category)}`);
         if (!res.ok) throw new Error('Failed to fetch products');
         let data = await res.json();
-        data = data.filter((p: any) => p.category === category);
+        // Normalize image field for ProductCard compatibility
+        data = data.map((p: any) => ({ ...p, image: p.images?.[0] || '' }));
         setProducts(data);
       } catch (err: any) {
         setError(err.message || 'Error fetching products');

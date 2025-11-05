@@ -80,6 +80,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/quick-links/refund_policy" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
+                  Refund Policy
+                </Link>
+              </li>
+              <li>
                 <Link href="/quick-links/shipping-returns" className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1">
                   Shipping & Returns
                 </Link>

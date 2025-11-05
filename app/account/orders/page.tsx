@@ -22,7 +22,16 @@ export default function AccountOrdersPage() {
         const res = await fetch("/api/orders");
         if (!res.ok) throw new Error("Failed to fetch orders");
         const data = await res.json();
-        setOrders(data);
+        // Normalize common field names so UI is resilient to schema differences
+        const normalized = data.map((o: any) => ({
+          _id: o._id || o.id || o.orderId,
+          orderId: o.orderId || o._id || o.id,
+          createdAt: o.createdAt || o.created_at || o.date,
+          status: o.status || o.orderStatus || o.paymentStatus || 'processing',
+          total: o.total || o.totalPrice || o.amount || 0,
+          itemsCount: (o.items && o.items.length) || (o.orderItems && o.orderItems.length) || (o.itemsCount) || 0,
+        }));
+        setOrders(normalized);
       } catch {
         setOrders([]);
       } finally {
@@ -43,20 +52,28 @@ export default function AccountOrdersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
+              <TableHead>Order</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((order: any) => (
               <TableRow key={order._id}>
-                <TableCell>{order._id}</TableCell>
-                <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[order.status] || 'default'}>{order.status}</Badge>
+                  <a href={`/orders/${order._id}`} className="text-primary underline">
+                    {order.orderId || order._id}
+                  </a>
                 </TableCell>
+                <TableCell>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '—'}</TableCell>
+                <TableCell>
+                  <Badge variant={STATUS_VARIANT[order.status] || 'default'} className="capitalize">
+                    {order.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{order.itemsCount}</TableCell>
                 <TableCell>₹{order.total}</TableCell>
               </TableRow>
             ))}

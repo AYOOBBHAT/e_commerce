@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
+import Audit from '@/models/Audit';
 import { getServerSession } from '@/lib/auth';
 
 export async function GET(
@@ -42,13 +43,23 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
     await connectToDatabase();
     const data = await request.json();
-    
+    // Only allow updating status and paymentInfo.status via admin
+    const update: any = {};
+    if (typeof data.status === 'string') update.status = data.status;
+    if (data.paymentInfo && typeof data.paymentInfo.status === 'string') update['paymentInfo.status'] = data.paymentInfo.status;
+
+    // fetch current order to capture previous status
+    const existing = await Order.findById(params.id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+    const prevStatus = existing.status;
+
     const order = await Order.findByIdAndUpdate(
       params.id,
-      { $set: data },
+      { $set: update },
       { new: true }
     );
     
@@ -59,7 +70,23 @@ export async function PATCH(
       );
     }
     
-    return NextResponse.json(order);
+    // create audit log entry for status change
+    try {
+      if (update.status && update.status !== prevStatus) {
+        await Audit.create({
+          adminId: session.userId,
+          orderId: params.id,
+          action: 'update_order_status',
+          before: prevStatus,
+          after: update.status,
+        });
+      }
+    } catch (auditErr) {
+      console.warn('Failed to create audit log:', auditErr);
+    }
+
+    // include previous status in response to allow client-side undo
+    return NextResponse.json({ order, previousStatus: prevStatus });
   } catch (error) {
     console.error('Error updating order:', error);
     return NextResponse.json(
