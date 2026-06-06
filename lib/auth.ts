@@ -45,6 +45,14 @@ export async function encrypt(payload: any) {
     .sign(key);
 }
 
+export async function createShortLivedToken(payload: any, expires: string = '1d') {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expires)
+    .sign(key);
+}
+
 export async function decrypt(token: string) {
   try {
     const { payload } = await jwtVerify(token, key, {
@@ -59,6 +67,40 @@ export async function decrypt(token: string) {
 export async function login(userId: string, role: string) {
   const token = await encrypt({ userId, role });
   return token;
+}
+
+/**
+ * Helper to set auth cookie on a NextResponse
+ */
+export function setAuthCookie(response: NextResponse, token: string) {
+  const cookieOpts: Record<string, any> = {
+    name: 'token',
+    value: token,
+    httpOnly: defaultCookieOptions.httpOnly,
+    secure: defaultCookieOptions.secure,
+    maxAge: defaultCookieOptions.maxAge,
+    path: defaultCookieOptions.path,
+    sameSite: defaultCookieOptions.sameSite as any,
+  };
+  if (COOKIE_DOMAIN) cookieOpts.domain = COOKIE_DOMAIN;
+  response.cookies.set(cookieOpts as any);
+}
+
+/**
+ * Helper to clear auth cookie
+ */
+export function clearAuthCookie(response: NextResponse) {
+  const cookieOpts: Record<string, any> = {
+    name: 'token',
+    value: '',
+    httpOnly: defaultCookieOptions.httpOnly,
+    secure: defaultCookieOptions.secure,
+    expires: new Date(0),
+    path: defaultCookieOptions.path,
+    sameSite: defaultCookieOptions.sameSite as any,
+  };
+  if (COOKIE_DOMAIN) cookieOpts.domain = COOKIE_DOMAIN;
+  response.cookies.set(cookieOpts as any);
 }
 
 export async function logout() {
@@ -99,16 +141,8 @@ export async function updateSession(request: NextRequest) {
     // Refresh the token expiry
     const newToken = await encrypt(verified);
     const response = NextResponse.next();
-    response.cookies.set({
-      name: 'token',
-      value: newToken,
-      // spread default options - NextResponse.cookies.set accepts similar fields
-      httpOnly: defaultCookieOptions.httpOnly,
-      secure: defaultCookieOptions.secure,
-      maxAge: defaultCookieOptions.maxAge,
-      path: defaultCookieOptions.path,
-      sameSite: defaultCookieOptions.sameSite as any,
-    });
+    // Use helper to set cookie consistently
+    setAuthCookie(response, newToken);
 
     return response;
   } catch (error) {

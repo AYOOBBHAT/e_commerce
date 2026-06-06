@@ -85,6 +85,38 @@ export async function PATCH(
       console.warn('Failed to create audit log:', auditErr);
     }
 
+    // Send shipping update notification if status changed to shipped
+    if (update.status === 'shipped' && update.status !== prevStatus) {
+      try {
+        const { sendShippingUpdateEmail } = await import('@/lib/email-service');
+        
+        // Get customer email from order
+        let customerEmail: string | null = null;
+        
+        // Try to get email from populated user
+          const populatedOrder = await Order.findById(params.id).populate('user', 'email name');
+        if (populatedOrder?.user) {
+          customerEmail = (populatedOrder.user as any).email;
+        }
+        
+        // Fallback to customer email if user not found
+        if (!customerEmail && populatedOrder?.customer?.email) {
+          customerEmail = populatedOrder.customer.email;
+        }
+
+        if (customerEmail) {
+          await sendShippingUpdateEmail({
+            email: customerEmail,
+            orderId: order.orderId || params.id,
+            trackingNumber: update.trackingNumber,
+          });
+        }
+      } catch (emailErr) {
+        console.error('Error sending shipping notification:', emailErr);
+        // Don't fail the status update if email fails
+      }
+    }
+
     // include previous status in response to allow client-side undo
     return NextResponse.json({ order, previousStatus: prevStatus });
   } catch (error) {

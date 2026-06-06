@@ -6,6 +6,13 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   comparePrice?: number;
+  unitLabel?: string;
+  variants?: {
+    label: string;
+    price: number;
+    comparePrice?: number;
+    inStock?: boolean;
+  }[];
   images: string[];
   category: string;
   inStock: boolean;
@@ -27,6 +34,15 @@ const productSchema = new Schema<IProduct>(
     description: { type: String, required: true },
     price: { type: Number, required: true },
     comparePrice: { type: Number },
+    unitLabel: { type: String, default: '' },
+    variants: [
+      {
+        label: { type: String, required: true },
+        price: { type: Number, required: true },
+        comparePrice: { type: Number },
+        inStock: { type: Boolean, default: true },
+      },
+    ],
     images: [{ type: String, required: true }],
     category: { type: String, required: true },
     inStock: { type: Boolean, default: true },

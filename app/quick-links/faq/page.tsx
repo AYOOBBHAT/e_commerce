@@ -54,7 +54,8 @@ export default function FAQPage() {
               <ul className="list-disc ml-6 mt-2 space-y-1">
                 <li>Credit/Debit Cards</li>
                 <li>Net Banking</li>
-                <li>UPI (Google Pay, PhonePe, Paytm, etc.)</li>
+                <li>UPI (PhonePe, Razorpay, Cashfree, Google Pay, etc.)</li>
+                <li>Cash on Delivery (COD)</li>
               </ul>
             </AccordionContent>
           </AccordionItem>

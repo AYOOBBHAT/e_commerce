@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
+import { invalidateProductCache } from '@/lib/actions/products';
 
 export async function GET() {
   try {
@@ -38,8 +39,14 @@ export async function POST(request: NextRequest) {
     // Revalidate all product-related paths
     revalidatePath('/products');
     revalidatePath('/products/featured');
-    if (product?.slug) revalidatePath(`/products/${product.slug}`);
-    if (product?.category) revalidatePath(`/category/${product.category}`);
+    if (product?.slug) {
+      revalidatePath(`/products/${product.slug}`);
+      // Invalidate Redis cache
+      await invalidateProductCache(product.slug, product.category);
+    }
+    if (product?.category) {
+      revalidatePath(`/category/${product.category}`);
+    }
   } catch (e) {
     console.warn('revalidatePath failed:', e);
   }

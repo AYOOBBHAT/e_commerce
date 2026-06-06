@@ -22,7 +22,15 @@ export async function GET(request: NextRequest) {
     const exportCsv = searchParams.get('export') === 'csv';
 
     const filter: any = {};
-    if (statusFilter) filter.status = statusFilter;
+    if (statusFilter) {
+      // 'pending' status should include both 'pending' and 'processing' orders
+      // since they're grouped together in the dashboard
+      if (statusFilter === 'pending') {
+        filter.status = { $in: ['pending', 'processing'] };
+      } else {
+        filter.status = statusFilter;
+      }
+    }
     if (dateFrom || dateTo) {
       filter.createdAt = {};
       if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
@@ -86,9 +94,26 @@ export async function GET(request: NextRequest) {
         }
       });
 
+      // Generate filename with filters if applicable
+      const filenameParts = ['orders-export'];
+      if (statusFilter) {
+        // For pending, include both pending and processing in filename
+        if (statusFilter === 'pending') {
+          filenameParts.push('pending-processing');
+        } else {
+          filenameParts.push(statusFilter);
+        }
+      }
+      if (dateFrom || dateTo) {
+        const fromStr = dateFrom ? dateFrom.replace(/-/g, '') : 'all';
+        const toStr = dateTo ? dateTo.replace(/-/g, '') : 'today';
+        filenameParts.push(`${fromStr}-to-${toStr}`);
+      }
+      const filename = `${filenameParts.join('-')}.csv`;
+
       const res = new NextResponse(stream as any, { status: 200 });
       res.headers.set('Content-Type', 'text/csv');
-      res.headers.set('Content-Disposition', 'attachment; filename="orders-export.csv"');
+      res.headers.set('Content-Disposition', `attachment; filename="${filename}"`);
       return res;
     }
 

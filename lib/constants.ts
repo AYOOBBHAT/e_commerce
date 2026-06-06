@@ -8,12 +8,14 @@ export const PRODUCT_CATEGORIES = [
 ];
 
 export const PAYMENT_METHODS = [
+  { id: 'phonepe', name: 'PhonePe', isActive: true },
   { id: 'razorpay', name: 'Razorpay', isActive: true },
-  { id: 'paytm', name: 'Paytm', isActive: true },
+  { id: 'cashfree', name: 'Cashfree', isActive: true },
   { id: 'cod', name: 'Cash on Delivery', isActive: true },
 ];
 
 export const ORDER_STATUS = [
+  { id: 'pending', name: 'Pending' },
   { id: 'processing', name: 'Processing' },
   { id: 'confirmed', name: 'Confirmed' },
   { id: 'shipped', name: 'Shipped' },

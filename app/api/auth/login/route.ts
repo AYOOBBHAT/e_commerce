@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { connectToDatabase } from '@/lib/db';
 import User from '@/models/User';
-import { encrypt } from '@/lib/auth';
+import { encrypt, setAuthCookie } from '@/lib/auth';
+import { isBlocked, recordFailedAttempt, resetAttempts, isBlockedComposite, recordFailedAttemptComposite, resetAttemptsComposite } from '@/lib/rateLimiter';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -24,14 +25,28 @@ export async function POST(request: Request) {
 
     const { email, password } = validation.data;
 
+    // Determine client IP for rate-limiting purposes
+    const xf = (request as any).headers?.get ? (request as any).headers.get('x-forwarded-for') : null;
+    const ip = xf ? xf.split(',')[0].trim() : (request as any).ip || 'unknown';
+    const ipKey = `login_ip_${ip}`;
+    const emailKey = `login_email_${email}`;
+
+    // Check combined blocking rules (per-ip, per-account, and their combo)
+    if (await isBlockedComposite(ip, email)) {
+      return NextResponse.json({ error: 'Too many failed login attempts, please try again later' }, { status: 429 });
+    }
+
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
+      // record failed attempts per ip + account combo
+      await recordFailedAttemptComposite(ip, email);
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    const token = await encrypt({ userId: user._id.toString(), role: user.role });
+    // Reset attempts on successful login
+    await resetAttemptsComposite(ip, email);
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const token = await encrypt({ userId: user._id.toString(), role: user.role });
 
     // Build the response first
     const response = NextResponse.json({
@@ -44,21 +59,11 @@ export async function POST(request: Request) {
       },
   }, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Surrogate-Control': 'no-store' } });
 
-    // ✅ Attach cookie BEFORE returning
-    response.cookies.set({
-      name: 'token',
-      value: token,
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',    // safer default
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    // Use helper to set cookie
+    setAuthCookie(response, token);
 
-    // Add a tiny debug header so we can confirm the server attached a cookie in production
     try {
       response.headers.set('x-debug-cookie-set', `${token.slice(0, 8)}...`);
-      response.headers.set('x-debug-cookie-options', JSON.stringify({ secure: isProd, sameSite: 'lax' }));
     } catch (e) {
       // ignore header set errors
     }

@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  Search, ShoppingCart, Heart, User, Menu, X, LogOut, 
-  PackageSearch, ShoppingBag, Settings, LayoutDashboard
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  LogOut,
+  PackageSearch,
+  LayoutDashboard,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,30 +78,41 @@ export default function Header({ user }: HeaderProps) {
     <>
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled || mobileMenuOpen ? 'bg-background/95 backdrop-blur-md shadow-lg border-b' : 'bg-background/80 backdrop-blur-md'
+          isScrolled || mobileMenuOpen 
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200' 
+            : 'bg-white/90 backdrop-blur-md'
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0">
-            <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 mr-2 text-primary" />
-            <span className="text-lg sm:text-xl font-bold text-foreground truncate">{SITE_NAME}</span>
+          <Link href="/" className="flex items-center flex-shrink-0 gap-2">
+            <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-lg overflow-hidden bg-white">
+              <Image
+                src="https://res.cloudinary.com/dfocwbzzo/image/upload/v1763995872/ZESCOH_LOGO_o7pz0s.jpg"
+                alt="ZeeShaEla & Co. logo"
+                fill
+                sizes="40px"
+                className="object-cover"
+                priority
+              />
+            </div>
+            <span className="text-lg sm:text-xl font-bold text-slate-900 truncate">{SITE_NAME}</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             <Link 
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full ${
-                pathname === '/' ? 'text-primary' : 'text-foreground'
+              className={`text-sm font-medium transition-colors hover:text-emerald-600 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full ${
+                pathname === '/' ? 'text-emerald-600' : 'text-slate-700'
               }`}
             >
               Home
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="link" className="text-foreground p-0 h-auto text-sm font-medium hover:text-primary transition-colors">
+                <Button variant="link" className="text-slate-700 p-0 h-auto text-sm font-medium hover:text-emerald-600 transition-colors">
                   Categories
                 </Button>
               </DropdownMenuTrigger>
@@ -109,8 +128,8 @@ export default function Header({ user }: HeaderProps) {
             </DropdownMenu>
             <Link 
               href="/products"
-              className={`text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full ${
-                pathname.startsWith('/products') ? 'text-primary' : 'text-foreground'
+              className={`text-sm font-medium transition-colors hover:text-emerald-600 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full ${
+                pathname.startsWith('/products') ? 'text-emerald-600' : 'text-slate-700'
               }`}
             >
               All Products
@@ -123,40 +142,48 @@ export default function Header({ user }: HeaderProps) {
             <form onSubmit={handleSearch} className="relative hidden md:block w-48 lg:w-64">
               <Input
                 type="search"
-                placeholder="Search products..."
-                className="pl-9 h-9 rounded-full bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all"
+                placeholder="Search"
+                className="pl-9 h-9 rounded-full bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-300 focus:border-slate-300 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </form>
             
             {/* Mobile Search Button */}
-            <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-9 w-9 text-slate-900 hover:bg-slate-100"
+              onClick={() => router.push('/search')}
+              aria-label="Search products"
+            >
               <Search className="h-4 w-4" />
             </Button>
             
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-primary/10 transition-colors">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-9 w-9 text-slate-900 hover:bg-slate-100 transition-colors"
+              >
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {cart.reduce((sum, item) => sum + item.quantity, 0) > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-primary text-[10px] sm:text-xs text-primary-foreground font-medium">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] sm:text-xs text-white font-medium shadow-sm">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
                 )}
               </Button>
             </Link>
             
-            <Link href="/wishlist" className="hidden sm:block">
-              <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-primary/10 transition-colors">
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-primary/10 transition-colors">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full h-9 w-9 text-slate-900 hover:bg-slate-100 transition-colors"
+                  >
                     <User className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -185,7 +212,12 @@ export default function Header({ user }: HeaderProps) {
                       <span>My Orders</span>
                     </Link>
                   </DropdownMenuItem>
-                  {/* Profile and settings removed per request */}
+                  <DropdownMenuItem>
+                    <Link href="/account/settings" className="flex w-full items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}
@@ -211,7 +243,7 @@ export default function Header({ user }: HeaderProps) {
           <Button 
             variant="ghost" 
             size="icon"
-            className="lg:hidden h-9 w-9 ml-2"
+            className="lg:hidden h-9 w-9 ml-2 text-slate-900 hover:bg-slate-100"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -223,24 +255,24 @@ export default function Header({ user }: HeaderProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-14 sm:top-16 lg:top-20 z-40 bg-background/95 backdrop-blur-md border-b shadow-lg">
+        <div className="lg:hidden fixed inset-x-0 top-14 sm:top-16 lg:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-lg">
           <div className="container mx-auto px-4 sm:px-6 py-6 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <form onSubmit={handleSearch} className="relative mb-6">
             <Input
               type="search"
-              placeholder="Search products..."
-              className="pl-9 h-11 w-full rounded-lg bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20"
+              placeholder="Search"
+              className="pl-9 h-11 w-full rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-300 focus:border-slate-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           </form>
           
           <nav className="flex flex-col space-y-6">
             <Link 
               href="/"
               className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
-                pathname === '/' ? 'text-primary bg-primary/10' : 'text-foreground hover:bg-muted'
+                pathname === '/' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -248,7 +280,7 @@ export default function Header({ user }: HeaderProps) {
             </Link>
             
             <div className="space-y-4">
-              <p className="text-base font-semibold text-foreground">Categories</p>
+              <p className="text-base font-semibold text-slate-900">Categories</p>
               <div className="grid grid-cols-2 gap-2">
                 {PRODUCT_CATEGORIES.map((category) => (
                   <Link
@@ -266,7 +298,7 @@ export default function Header({ user }: HeaderProps) {
             <Link 
               href="/products"
               className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
-                pathname.startsWith('/products') ? 'text-primary bg-primary/10' : 'text-foreground hover:bg-muted'
+                pathname.startsWith('/products') ? 'text-emerald-600 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -281,15 +313,6 @@ export default function Header({ user }: HeaderProps) {
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
-              </Link>
-              
-              <Link 
-                href="/wishlist"
-                className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Heart className="h-5 w-5 mr-2" />
-                Wishlist
               </Link>
             </div>
             

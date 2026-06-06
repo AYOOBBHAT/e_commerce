@@ -10,25 +10,26 @@ export async function POST() {
 
   const response = NextResponse.json({ message: 'Logged out successfully' }, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Surrogate-Control': 'no-store' } });
 
-    // Clear cookie by setting expired cookie on the response
-    const cookieOpts: Record<string, any> = {
-      name: 'token',
-      value: '',
-      httpOnly: true,
-      secure: isProd,
-      expires: new Date(0),
-      path: '/',
-      sameSite: COOKIE_SAME_SITE as any,
-    };
-    if (COOKIE_DOMAIN) cookieOpts.domain = COOKIE_DOMAIN;
-
-    response.cookies.set(cookieOpts as any);
+    // Use helper to clear cookie
     try {
+      const { clearAuthCookie } = await import('@/lib/auth');
+      clearAuthCookie(response);
       response.headers.set('x-debug-cookie-cleared', '1');
-      response.headers.set('x-debug-cookie-options', JSON.stringify(cookieOpts));
     } catch (e) {
-      // ignore
+      console.warn('Could not clear cookie via helper, falling back to manual clear', e);
+      const cookieOpts: Record<string, any> = {
+        name: 'token',
+        value: '',
+        httpOnly: true,
+        secure: isProd,
+        expires: new Date(0),
+        path: '/',
+        sameSite: COOKIE_SAME_SITE as any,
+      };
+      if (COOKIE_DOMAIN) cookieOpts.domain = COOKIE_DOMAIN;
+      response.cookies.set(cookieOpts as any);
     }
+
   return response;
   } catch (error) {
     console.error('Logout error:', error);

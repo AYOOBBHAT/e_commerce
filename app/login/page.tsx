@@ -75,19 +75,20 @@ export default function Login() {
     }
   };
   
-  return (
-    <div className="container max-w-md mx-auto px-4 py-16">
-      <div className="flex flex-col items-center mb-8">
-        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
-          <ShoppingBag className="h-6 w-6 text-primary" />
+  const content = (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-emerald-400/10 border border-emerald-400/40 mb-4 shadow-[0_10px_25px_rgba(16,185,129,0.35)]">
+            <ShoppingBag className="h-6 w-6 text-emerald-400" />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-50">{SITE_NAME}</h1>
+          <p className="text-sm text-slate-300 mt-1">Sign in to your account</p>
         </div>
-        <h1 className="text-2xl font-bold">{SITE_NAME}</h1>
-        <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
-      </div>
-      
-      <div className="bg-card p-6 md:p-8 rounded-lg shadow-sm border">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+        <div className="bg-slate-900/80 backdrop-blur-sm p-6 md:p-7 rounded-2xl shadow-xl border border-slate-700/70">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -142,24 +143,41 @@ export default function Login() {
             />
             
             <div className="text-sm text-right">
-              <Link href="/forgot-password" className="text-primary hover:text-primary/90">
+              <Link href="/forgot-password" className="text-emerald-300 hover:text-emerald-200">
                 Forgot password?
               </Link>
             </div>
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-        </Form>
-        
-        <div className="mt-6 text-center text-sm">
-          <span className="text-muted-foreground">Don&apos;t have an account? </span>
-          <Link href="/register" className="text-primary hover:text-primary/90 font-medium">
-            Sign up
-          </Link>
+              <Button
+                type="submit"
+                className="w-full mt-1 bg-emerald-400 text-slate-950 hover:bg-emerald-300 font-semibold shadow-[0_12px_28px_rgba(16,185,129,0.4)]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </form>
+          </Form>
+          
+          <div className="mt-4">
+            <a
+              href="/api/auth/google"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-slate-700/80 bg-slate-900/60 text-slate-50 hover:bg-slate-800 transition-colors"
+            >
+              <img src="/google-logo.svg" alt="Google" className="h-5 w-5" />
+              Continue with Google
+            </a>
+          </div>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-slate-400">Don&apos;t have an account? </span>
+            <Link href="/register" className="text-emerald-300 hover:text-emerald-200 font-medium">
+              Sign up
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return content;
 }

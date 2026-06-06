@@ -1,79 +1,84 @@
-'use client';
-
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import ProductGrid from '@/components/product/ProductGrid';
-import ProductCard from '@/components/product/ProductCard';
+import { ProductCollectionCard } from '@/components/product/ProductCollectionCard';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
 
-export default function FeaturedProducts() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface FeaturedProductsProps {
+  products: Array<{
+    _id?: string;
+    id?: string;
+    slug: string;
+    name: string;
+    price: number;
+    comparePrice?: number;
+    unitLabel?: string;
+    variants?: Array<{
+      label: string;
+      price: number;
+      comparePrice?: number;
+      inStock?: boolean;
+    }>;
+    image: string;
+    inStock: boolean;
+    category?: string;
+    featured?: boolean;
+  }>;
+}
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Failed to fetch products');
-        let data = await res.json();
-        // Map images[0] to image for compatibility with ProductCard
-        data = data.map((p: any) => ({ ...p, image: p.images?.[0] || '' }));
-        setProducts(data.filter((p: any) => p.featured));
-      } catch (err: any) {
-        setError(err.message || 'Error fetching products');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
+  if (!products || products.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-12 md:py-16 bg-slate-50/80">
       <div className="container px-2 sm:px-4 mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-black">Featured Products</h2>
-          <Link href="/products/featured">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-emerald-500">Best Sellers</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Featured Products</h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Handpicked combos and staples loved by our community.
+            </p>
+          </div>
+          <Link href="/products/featured" className="flex justify-end">
             <Button
               variant="outline"
-              className="group bg-white text-black border border-gray-300 hover:bg-gray-100"
+              className="group rounded-full border-slate-300 bg-white text-slate-900 hover:bg-slate-900 hover:text-white"
             >
               View All
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 text-black" />
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
 
         {/* Content */}
-        {loading ? (
-          <div className="p-6 text-center">Loading products...</div>
-        ) : error ? (
-          <div className="p-6 text-center text-destructive">{error}</div>
-        ) : (
-          <>
-            {/* Mobile: scrollable row */}
-            <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
+        <>
+          {/* Mobile: scrollable row */}
+          <div className="flex sm:hidden gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+            {products.map((product) => (
+              <div
+                key={product._id || product.id || product.slug}
+                className="min-w-[62vw] sm:min-w-[48vw] max-w-[62vw] sm:max-w-[48vw] flex-shrink-0"
+              >
+                <ProductCollectionCard product={product} />
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: grid layout */}
+          <div className="hidden sm:block">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               {products.map((product) => (
-                <div
+                <ProductCollectionCard
                   key={product._id || product.id || product.slug}
-                  className="min-w-[70vw] max-w-xs flex-shrink-0"
-                >
-                  <ProductCard product={product} />
-                </div>
+                  product={product}
+                />
               ))}
             </div>
-
-            {/* Desktop: grid layout */}
-            <div className="hidden sm:block">
-              <ProductGrid products={products} columns={3} />
-            </div>
-          </>
-        )}
+          </div>
+        </>
       </div>
     </section>
   );

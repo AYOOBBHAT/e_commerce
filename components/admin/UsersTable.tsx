@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { MoreHorizontal, Shield, ShieldOff, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,36 +20,45 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
-// Mock data - replace with real data from your API
-const users = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'user',
-    createdAt: '2024-01-15T10:00:00Z',
-    ordersCount: 5,
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'admin',
-    createdAt: '2024-01-10T15:30:00Z',
-    ordersCount: 3,
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    role: 'user',
-    createdAt: '2024-02-20T09:15:00Z',
-    ordersCount: 8,
-  },
-];
-
 export default function UsersTable() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/admin/users');
+        if (!res.ok) throw new Error('Failed to fetch users');
+        const data = await res.json();
+        
+        // Fetch order counts for each user
+        const usersWithOrders = await Promise.all(
+          data.map(async (user: any) => {
+            try {
+              const ordersRes = await fetch(`/api/admin/users/${user._id}/orders`);
+              const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+              return {
+                ...user,
+                ordersCount: ordersData.length || 0,
+              };
+            } catch {
+              return { ...user, ordersCount: 0 };
+            }
+          })
+        );
+        
+        setUsers(usersWithOrders);
+      } catch (err: any) {
+        console.error('Error fetching users:', err);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleUpdateRole = async (userId: string, newRole: 'user' | 'admin') => {
     if (!confirm(`Are you sure you want to ${newRole === 'admin' ? 'promote' : 'demote'} this user?`)) return;
@@ -101,80 +110,99 @@ export default function UsersTable() {
     }
   };
 
+  if (loading) return <div className="p-6 text-center text-muted-foreground">Loading users...</div>;
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Joined</TableHead>
-            <TableHead>Orders</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
-                <div>
-                  <div className="font-medium">{user.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {user.email}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                  {user.role}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {format(new Date(user.createdAt), 'MMM d, yyyy')}
-              </TableCell>
-              <TableCell>{user.ordersCount}</TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {user.role === 'user' ? (
-                      <DropdownMenuItem
-                        onClick={() => handleUpdateRole(user.id, 'admin')}
-                        disabled={isUpdating}
-                        className="flex items-center"
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        Make Admin
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() => handleUpdateRole(user.id, 'user')}
-                        disabled={isUpdating}
-                        className="flex items-center"
-                      >
-                        <ShieldOff className="mr-2 h-4 w-4" />
-                        Remove Admin
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(user.id)}
-                      disabled={isUpdating}
-                      className="flex items-center text-destructive focus:text-destructive"
-                    >
-                      <Trash className="mr-2 h-4 w-4" />
-                      Delete User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+    <div className="rounded-lg border-2 bg-white overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="font-semibold text-gray-900 min-w-[250px]">User</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[120px]">Role</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[150px]">Joined Date</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[100px]">Orders</TableHead>
+              <TableHead className="text-right font-semibold text-gray-900 min-w-[100px]">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No users found
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((user) => (
+                <TableRow key={user._id || user.id} className="hover:bg-gray-50">
+                  <TableCell className="py-4">
+                    <div>
+                      <div className="font-semibold text-gray-900">{user.name || '—'}</div>
+                      <div className="text-sm text-gray-500">
+                        {user.email || '—'}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge 
+                      variant={user.role === 'admin' ? 'default' : 'secondary'}
+                      className={user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-800 border-gray-200'}
+                    >
+                      {user.role || 'user'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="text-gray-700 font-medium">
+                      {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="text-gray-700 font-semibold">{user.ordersCount || 0}</span>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hover:bg-gray-100 text-gray-700 hover:text-gray-900">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white border-2 shadow-lg">
+                        {user.role === 'user' ? (
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateRole(user._id || user.id, 'admin')}
+                            disabled={isUpdating}
+                            className="flex items-center text-gray-900 hover:bg-gray-100"
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Make Admin
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateRole(user._id || user.id, 'user')}
+                            disabled={isUpdating}
+                            className="flex items-center text-gray-900 hover:bg-gray-100"
+                          >
+                            <ShieldOff className="mr-2 h-4 w-4" />
+                            Remove Admin
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(user._id || user.id)}
+                          disabled={isUpdating}
+                          className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete User
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,1 @@
+// jest config removed — tests were disabled per request. If you need jest back, I can restore configuration and tests.

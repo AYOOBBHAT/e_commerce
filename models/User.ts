@@ -14,7 +14,10 @@ export interface IAddress {
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string | null;
+  provider: 'credentials' | 'google';
+  emailVerified?: boolean;
+  googleId?: string;
   phone?: string;
   role: 'user' | 'admin';
   addresses: IAddress[];
@@ -37,7 +40,10 @@ const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false, default: null },
+    provider: { type: String, enum: ['credentials', 'google'], default: 'credentials' },
+    emailVerified: { type: Boolean, default: false },
+    googleId: { type: String },
     phone: { type: String },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     addresses: [addressSchema],
@@ -45,10 +51,11 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Hash the password before saving
+// Hash the password before saving (only if a password is present and was modified)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+  if (!this.password) return next();
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -60,7 +67,13 @@ userSchema.pre('save', async function (next) {
 
 // Method to compare passwords
 userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
-  return bcrypt.compare(password, this.password);
+  // If password is not set (e.g., OAuth user) or provider is google, disallow password comparison
+  if (!this.password) return false;
+  try {
+    return await bcrypt.compare(password, this.password);
+  } catch (err) {
+    return false;
+  }
 };
 
 export default mongoose.models.User || mongoose.model<IUser>('User', userSchema);

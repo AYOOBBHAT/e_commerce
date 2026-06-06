@@ -1,5 +1,12 @@
+'use client';
+
+import { Suspense } from 'react';
 import { Package } from 'lucide-react';
 import OrdersTable from '@/components/admin/OrdersTable';
+
+function OrdersTableWrapper() {
+  return <OrdersTable />;
+}
 
 export default function AdminOrders() {
   return (
@@ -9,7 +16,9 @@ export default function AdminOrders() {
         <p className="text-muted-foreground">Manage customer orders</p>
       </div>
 
-      <OrdersTable />
+      <Suspense fallback={<div className="text-muted-foreground">Loading orders...</div>}>
+        <OrdersTableWrapper />
+      </Suspense>
     </div>
   );
 }

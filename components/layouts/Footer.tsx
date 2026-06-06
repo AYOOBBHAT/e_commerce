@@ -30,7 +30,7 @@ export default function Footer() {
               <a href="http://wa.me/+919469030389" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-800 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                 <FaWhatsapp className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
-              <a href="http://wa.me/9797435756" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-800 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+              <a href="http://wa.me/+919797435756" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-800 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                 <FaWhatsapp className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
             </div>

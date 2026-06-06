@@ -39,6 +39,11 @@ const menuItems = [
     href: '/admin/settings',
     icon: Settings,
   },
+  {
+    title: 'Rate limiter',
+    href: '/admin/rate-limiter',
+    icon: ChevronDown,
+  },
 ];
 
 export default function AdminSidebar() {

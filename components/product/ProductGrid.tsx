@@ -7,6 +7,7 @@ interface Product {
   name: string;
   price: number;
   comparePrice?: number;
+  unitLabel?: string;
   image: string;
   inStock: boolean;
   category: string;

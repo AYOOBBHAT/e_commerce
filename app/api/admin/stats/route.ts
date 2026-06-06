@@ -1,9 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import User from '@/models/User';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
+import { PRODUCT_CATEGORIES } from '@/lib/constants';
+
+const CATEGORY_LABELS = PRODUCT_CATEGORIES.reduce<Record<string, string>>((acc, category) => {
+  acc[category.id] = category.name;
+  return acc;
+}, {});
+
+const mapStatusToBucket = (status?: string) => {
+  const normalized = (status || '').toLowerCase();
+  if (normalized === 'shipped') return 'shipped';
+  if (normalized === 'delivered') return 'delivered';
+  if (normalized === 'cancelled' || normalized === 'canceled') return 'cancelled';
+  return 'pending';
+};
 
 export async function GET() {
   try {
@@ -17,45 +31,201 @@ export async function GET() {
 
     await connectToDatabase();
 
-    // Get total revenue
-    const orders = await Order.find();
-    const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
+    const [orders, totalUsers] = await Promise.all([
+      Order.find().populate('user', 'name email').lean(),
+      User.countDocuments(),
+    ]);
 
-    // Get total orders count
     const totalOrders = orders.length;
-
-    // Get total users count
-    const totalUsers = await User.countDocuments();
-
-    // Get total products sold
-    const productsSold = orders.reduce(
-  (acc, order) => acc + order.orderItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
+    const totalRevenue = orders.reduce(
+      (acc, order: any) => acc + (order.totalPrice || order.total || 0),
       0
     );
 
-    // Get sales data for chart
-    const salesData = await Order.aggregate([
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: '%Y-%m', date: '$createdAt' }
-          },
-          sales: { $sum: '$totalPrice' }
+    const orderLineItems: {
+      productId?: string;
+      name: string;
+      quantity: number;
+      price: number;
+    }[] = [];
+
+    orders.forEach((order: any) => {
+      const lineItems =
+        Array.isArray(order.orderItems) && order.orderItems.length
+          ? order.orderItems
+          : Array.isArray(order.items)
+          ? order.items
+          : [];
+
+      lineItems.forEach((item: any) => {
+        orderLineItems.push({
+          productId: item.product ? item.product.toString() : undefined,
+          name: item.name || 'Unknown product',
+          quantity: item.quantity || 0,
+          price: item.price || 0,
+        });
+      });
+    });
+
+    const productsSold = orderLineItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+    const productIds = Array.from(
+      new Set(orderLineItems.map((item) => item.productId).filter(Boolean))
+    );
+    const rawProductDocs = productIds.length
+      ? await Product.find({ _id: { $in: productIds } })
+          .select('name category quantity inStock')
+          .lean()
+      : [];
+    const productDocs = rawProductDocs.map((product: any) => ({
+      _id: product?._id?.toString?.() ?? '',
+      name: product?.name || 'Unnamed product',
+      category: product?.category,
+      quantity: product?.quantity,
+      inStock: product?.inStock,
+    }));
+    const productMap = productDocs.reduce<Record<string, (typeof productDocs)[number]>>(
+      (acc, product) => {
+        if (product._id) {
+          acc[product._id] = product;
         }
+        return acc;
       },
-      { $sort: { '_id': 1 } },
-      { $limit: 6 }
-    ]);
+      {}
+    );
+
+    const salesByProductMap = new Map<
+      string,
+      { productId: string; name: string; category: string; quantity: number; revenue: number }
+    >();
+    orderLineItems.forEach((item) => {
+      const key = item.productId || item.name;
+      const productDoc = item.productId ? productMap[item.productId] : null;
+      const categoryId = productDoc?.category || 'uncategorized';
+      const displayCategory = CATEGORY_LABELS[categoryId] || categoryId || 'Uncategorized';
+      const existing =
+        salesByProductMap.get(key) || {
+          productId: item.productId || key,
+          name: productDoc?.name || item.name || 'Unknown product',
+          category: displayCategory,
+          quantity: 0,
+          revenue: 0,
+        };
+      existing.quantity += item.quantity || 0;
+      existing.revenue += (item.price || 0) * (item.quantity || 0);
+      salesByProductMap.set(key, existing);
+    });
+
+    const salesByProduct = Array.from(salesByProductMap.values()).sort(
+      (a, b) => b.revenue - a.revenue
+    );
+    const topSellingProducts = salesByProduct.slice(0, 5);
+
+    const salesByCategoryMap = new Map<
+      string,
+      { category: string; revenue: number; quantity: number }
+    >();
+    salesByProduct.forEach((entry) => {
+      const category = entry.category || 'Uncategorized';
+      const existing = salesByCategoryMap.get(category) || {
+        category,
+        revenue: 0,
+        quantity: 0,
+      };
+      existing.revenue += entry.revenue;
+      existing.quantity += entry.quantity;
+      salesByCategoryMap.set(category, existing);
+    });
+    const salesByCategory = Array.from(salesByCategoryMap.values()).sort(
+      (a, b) => b.revenue - a.revenue
+    );
+
+    const rawLowStockProducts = await Product.find({ quantity: { $lte: 10 } })
+      .select('name quantity inStock category')
+      .sort({ quantity: 1 })
+      .limit(5)
+      .lean();
+    const lowStockProducts = rawLowStockProducts.map((product: any) => ({
+      id: product?._id?.toString?.() ?? '',
+      name: product?.name || 'Unnamed product',
+      quantity: product?.quantity ?? 0,
+      inStock: !!product?.inStock,
+      category: CATEGORY_LABELS[product?.category] || product?.category || 'Uncategorized',
+    }));
+
+    const orderStatusCounts = {
+      pending: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+
+    const ordersByStatus: Record<
+      'pending' | 'shipped' | 'delivered' | 'cancelled',
+      { orderId: string; customer: string; email: string; total: number; createdAt: string }[]
+    > = {
+      pending: [],
+      shipped: [],
+      delivered: [],
+      cancelled: [],
+    };
+
+    const MAX_STATUS_ENTRIES = 5;
+    orders.forEach((order: any) => {
+      const bucket = mapStatusToBucket(order.status) as keyof typeof orderStatusCounts;
+      orderStatusCounts[bucket] += 1;
+
+      if (ordersByStatus[bucket].length < MAX_STATUS_ENTRIES) {
+        const customerName =
+          order.user?.name ||
+          order.shippingAddress?.name ||
+          order.customer?.name ||
+          order.name ||
+          'Customer';
+        const customerEmail =
+          order.user?.email ||
+          order.email ||
+          order.customer?.email ||
+          order.shippingAddress?.email ||
+          '—';
+        ordersByStatus[bucket].push({
+          orderId: order.orderId || order._id?.toString() || '',
+          customer: customerName,
+          email: customerEmail,
+          total: order.totalPrice || order.total || 0,
+          createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
+        });
+      }
+    });
+
+    const monthlySalesMap = new Map<string, { name: string; sales: number }>();
+    orders.forEach((order: any) => {
+      if (!order.createdAt) return;
+      const date = new Date(order.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      const existing = monthlySalesMap.get(key) || { name: label, sales: 0 };
+      existing.sales += order.totalPrice || order.total || 0;
+      monthlySalesMap.set(key, existing);
+    });
+    const salesData = Array.from(monthlySalesMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-6)
+      .map(([, value]) => value);
 
     return NextResponse.json({
       totalRevenue,
       totalOrders,
       totalUsers,
       productsSold,
-      salesData: salesData.map(item => ({
-        name: item._id,
-        sales: item.sales
-      }))
+      salesData,
+      salesByProduct: salesByProduct.slice(0, 5),
+      salesByCategory: salesByCategory.slice(0, 5),
+      topSellingProducts,
+      lowStockProducts,
+      orderStatusCounts,
+      ordersByStatus,
     });
   } catch (error) {
     console.error('Error fetching stats:', error);

@@ -1,71 +1,130 @@
 import { notFound } from 'next/navigation';
-import { connectToDatabase } from '@/lib/db';
-import Product from '@/models/Product';
-import ProductCard from '@/components/product/ProductCard';
-import mongoose from 'mongoose';
+import { getProductBySlug } from '@/lib/actions/products';
+import ProductDetailInfo from '@/components/product/ProductDetailInfo';
+import ProductImageGallery from '@/components/product/ProductImageGallery';
+import { generateProductStructuredData, generateBreadcrumbStructuredData } from '@/lib/structured-data';
+import Script from 'next/script';
 
-export const revalidate = 30; // seconds
+// ISR: Revalidate every hour, or on-demand via tag revalidation
+export const revalidate = 3600;
 
 type Props = {
   params: { slug: string };
 };
 
-function escapeRegex(str: string) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourstore.com';
+
+export async function generateMetadata({ params }: Props) {
+  const product = await getProductBySlug(params.slug);
+  
+  if (!product) {
+    return {
+      title: 'Product Not Found',
+    };
+  }
+
+  const productUrl = `${baseUrl}/products/${product.slug}`;
+  const mainImage = product.images?.[0] || '';
+
+  return {
+    title: `${product.name} | ${process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store'}`,
+    description: product.description.substring(0, 160),
+    openGraph: {
+      title: product.name,
+      description: product.description.substring(0, 160),
+      url: productUrl,
+      siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
+      images: product.images && product.images.length > 0 
+        ? product.images.map((img: string) => ({ url: img, width: 1200, height: 630 }))
+        : [],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: product.name,
+      description: product.description.substring(0, 160),
+      images: mainImage ? [mainImage] : [],
+    },
+    alternates: {
+      canonical: productUrl,
+    },
+  };
 }
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = params;
-  await connectToDatabase();
-
-  // Try several lookup strategies to avoid 404s caused by encoding/casing/id
-  let product: any = null;
-
-  try {
-    product = await Product.findOne({ slug }).lean();
-
-    if (!product) {
-      const decoded = decodeURIComponent(slug);
-      if (decoded !== slug) {
-        product = await Product.findOne({ slug: decoded }).lean();
-      }
-    }
-
-    if (!product) {
-      // case-insensitive slug match
-      const re = new RegExp('^' + escapeRegex(slug) + '$', 'i');
-      product = await Product.findOne({ slug: re }).lean();
-    }
-
-    if (!product && mongoose.isValidObjectId(slug)) {
-      // maybe the URL used the _id instead of slug
-      product = await Product.findById(slug).lean();
-    }
-  } catch (err) {
-    console.error('Error looking up product by slug:', slug, err);
-  }
+  const product = await getProductBySlug(slug);
 
   if (!product) {
-    console.warn('Product not found for slug:', slug);
     return notFound();
   }
 
-  // Map images[0] to image for ProductCard compatibility
-  const productForCard = { ...product, image: product.images?.[0] || '' };
+  const productImages = product.images || [];
+
+  // Generate structured data
+  const productStructuredData = generateProductStructuredData(
+    {
+      name: product.name,
+      description: product.description,
+      images: productImages,
+      price: product.price,
+      comparePrice: product.comparePrice,
+      inStock: product.inStock,
+      slug: product.slug,
+      category: product.category,
+      ratings: product.ratings,
+    },
+    baseUrl
+  );
+
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: 'Home', url: baseUrl },
+    ...(product.category
+      ? [{ name: product.category, url: `${baseUrl}/category/${product.category}` }]
+      : []),
+    { name: product.name, url: `${baseUrl}/products/${product.slug}` },
+  ]);
 
   return (
-    <div className="container mx-auto px-4 py-12 bg-white text-black rounded-lg shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          {/* Image + details could be expanded here */}
-          <img src={productForCard.image} alt={product.name} className="w-full h-auto object-cover rounded-md" />
-          <h1 className="text-2xl font-bold mt-4">{product.name}</h1>
-          <p className="mt-2 text-gray-700">{product.description}</p>
+    <>
+      {/* Structured Data */}
+      <Script
+        id="product-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productStructuredData),
+        }}
+      />
+      <Script
+        id="breadcrumb-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbData),
+        }}
+      />
+
+      <section className="py-12 md:py-16 bg-gradient-to-b from-white via-slate-50 to-white">
+        <div className="container mx-auto px-4">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              {productImages.length > 0 ? (
+                <ProductImageGallery images={productImages} productName={product.name} />
+              ) : (
+                <div className="w-full aspect-[4/5] bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400">
+                  No image available
+                </div>
+              )}
+            </div>
+            <ProductDetailInfo
+              product={{
+                ...product,
+                _id: product._id?.toString() || product._id,
+                images: productImages,
+              }}
+            />
+          </div>
         </div>
-        <aside>
-          <ProductCard product={productForCard as any} />
-        </aside>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }

@@ -4,12 +4,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, ShoppingCart, Check } from 'lucide-react'; // 👈 Eye removed
+import { ShoppingCart, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary';
 import { useCart } from '@/components/CartProvider';
 
 interface ProductCardProps {
@@ -20,6 +19,13 @@ interface ProductCardProps {
     name: string;
     price: number;
     comparePrice?: number;
+    unitLabel?: string;
+    variants?: {
+      label: string;
+      price: number;
+      comparePrice?: number;
+      inStock?: boolean;
+    }[];
     image: string;
     inStock: boolean;
     category: string;
@@ -28,41 +34,39 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { addToCart } = useCart();
 
-  const handleAddToWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-
-    if (!isWishlisted) {
-      toast.success('Added to wishlist');
-    } else {
-      toast.info('Removed from wishlist');
-    }
-  };
+  const primaryVariant = product.variants?.[0];
+  const variantAvailable = primaryVariant ? primaryVariant.inStock !== false : true;
+  const displayPrice = primaryVariant?.price ?? product.price;
+  const displayComparePrice =
+    primaryVariant?.comparePrice ?? (product.comparePrice ?? undefined);
+  const displayUnitLabel = primaryVariant?.label || product.unitLabel;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isAddedToCart) {
-      setIsAddedToCart(true);
-      addToCart({
-        id: product.id || product._id || '',
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        quantity: 1,
-      });
-      toast.success('Added to cart');
+    if (isAddedToCart || !product.inStock || !variantAvailable) return;
 
-      setTimeout(() => {
-        setIsAddedToCart(false);
-      }, 2000);
-    }
+    setIsAddedToCart(true);
+    addToCart({
+      id:
+        (product.id || product._id || '') +
+        (primaryVariant?.label ? `-${primaryVariant.label}` : ''),
+      name: product.name,
+      price: displayPrice,
+      image: product.image || '/fallback.png',
+      quantity: 1,
+      unitLabel: displayUnitLabel,
+      variantLabel: primaryVariant?.label,
+    });
+    toast.success('Added to cart');
+
+    setTimeout(() => {
+      setIsAddedToCart(false);
+    }, 2000);
   };
 
   return (
@@ -71,32 +75,16 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Product Image */}
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-lg bg-white">
           <Image
-            src={getOptimizedCloudinaryUrl(product.image || '/fallback.png', 400)}
+            src={product.image || '/fallback.png'}
             alt={product.name}
             fill
-            className="object-cover rounded-t-lg"
+            className="object-contain p-4 rounded-t-lg"
             sizes="(max-width: 768px) 80vw, (max-width: 1200px) 40vw, 25vw"
+            loading="lazy"
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
-
-          {/* Wishlist */}
-          <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white shadow-lg"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleAddToWishlist(e);
-              }}
-            >
-              <Heart
-                className={`h-3.5 w-3.5 ${
-                  isWishlisted ? 'fill-destructive text-destructive' : 'text-muted-foreground'
-                }`}
-              />
-            </Button>
-          </div>
 
           {/* Out of Stock Overlay */}
           {!product.inStock && (
@@ -119,13 +107,20 @@ export default function ProductCard({ product }: ProductCardProps) {
               {product.name}
             </h3>
 
-            <div className="flex items-center gap-2 justify-center mb-2">
-              <span className="text-base sm:text-lg font-bold text-primary">
-                ₹{product.price.toFixed(2)}
-              </span>
-              {product.comparePrice && (
-                <span className="text-xs sm:text-sm text-gray-500 line-through">
-                  ₹{product.comparePrice.toFixed(2)}
+            <div className="space-y-1 mb-2 text-center">
+              <div className="flex items-baseline gap-2 justify-center">
+                <span className="text-lg sm:text-xl font-bold text-emerald-600">
+                  ₹{displayPrice.toFixed(2)}
+                </span>
+                {displayComparePrice && (
+                  <span className="text-xs sm:text-sm text-slate-400 line-through">
+                    ₹{displayComparePrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              {displayUnitLabel && (
+                <span className="text-xs text-slate-500 font-medium">
+                  {displayUnitLabel}
                 </span>
               )}
             </div>
@@ -135,7 +130,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Button
             className="w-full mt-auto h-8 sm:h-9 font-semibold rounded-lg text-xs sm:text-sm transition-all duration-300 hover:shadow-md bg-purple-600 text-white hover:bg-purple-700"
             variant={isAddedToCart ? 'outline' : undefined}
-            disabled={!product.inStock || isAddedToCart}
+            disabled={!product.inStock || !variantAvailable || isAddedToCart}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

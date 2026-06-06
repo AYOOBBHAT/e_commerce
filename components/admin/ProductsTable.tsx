@@ -68,80 +68,99 @@ export default function ProductsTable() {
   if (error) return <div className="p-6 text-center text-destructive">{error}</div>;
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product._id || product.id}>
-              <TableCell>
-                <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded">
-                    <Image
-                      src={product.images?.[0] || product.image || '/placeholder.png'}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ID: {product._id || product.id}
-                    </div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>{product.category}</TableCell>
-              <TableCell>₹{product.price?.toFixed(2)}</TableCell>
-              <TableCell>{product.quantity}</TableCell>
-              <TableCell>
-                <Badge variant={product.inStock ? 'default' : 'destructive'}>
-                  {product.inStock ? 'In Stock' : 'Out of Stock'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link 
-                        href={`/admin/products/${product._id || product.id}/edit`}
-                        className="flex items-center"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex items-center text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(product._id || product.id)}
-                      disabled={isDeleting}
-                    >
-                      <Trash className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+    <div className="rounded-lg border-2 bg-white overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="font-semibold text-gray-900 min-w-[250px]">Product</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[150px]">Category</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[120px]">Price</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[100px]">Stock</TableHead>
+              <TableHead className="font-semibold text-gray-900 min-w-[120px]">Status</TableHead>
+              <TableHead className="text-right font-semibold text-gray-900 min-w-[100px]">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No products found
+                </TableCell>
+              </TableRow>
+            ) : (
+              products.map((product) => (
+                <TableRow key={product._id || product.id} className="hover:bg-gray-50">
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-16 w-16 overflow-hidden rounded-lg border">
+                        <Image
+                          src={product.images?.[0] || product.image || '/placeholder.png'}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">{product.name}</div>
+                        <div className="text-sm text-gray-500">
+                          ID: {(product._id || product.id).toString().slice(-8)}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="text-gray-700 font-medium">{product.category || '—'}</span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="font-semibold text-gray-900">₹{product.price?.toFixed(2) || '0.00'}</span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="text-gray-700 font-medium">{product.quantity ?? 0}</span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge 
+                      variant={product.inStock ? 'default' : 'destructive'}
+                      className={product.inStock ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : ''}
+                    >
+                      {product.inStock ? 'In Stock' : 'Out of Stock'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hover:bg-gray-100 text-gray-700 hover:text-gray-900">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white border-2 shadow-lg">
+                        <DropdownMenuItem asChild className="hover:bg-gray-100">
+                          <Link 
+                            href={`/admin/products/${product._id || product.id}/edit`}
+                            className="flex items-center text-gray-900"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(product._id || product.id)}
+                          disabled={isDeleting}
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

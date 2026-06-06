@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-
+    "test:phonepe-webhook": "node scripts/test-phonepe-webhook.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -42,6 +42,7 @@
     "@types/node": "20.6.2",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
+    "@upstash/redis": "^1.35.8",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
@@ -61,7 +62,7 @@
     "next-cloudinary": "^6.3.0",
     "next-themes": "^0.3.0",
     "nodemailer": "^6.9.12",
-    "paytmchecksum": "^1.5.1",
+    "pg-sdk-node": "https://phonepe.mycloudrepo.io/public/repositories/phonepe-pg-sdk-node/releases/v2/phonepe-pg-sdk-node.tgz",
     "postcss": "8.4.30",
     "razorpay": "^2.9.2",
     "react": "18.2.0",
@@ -76,12 +77,14 @@
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
+    "use-debounce": "^10.0.1",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/nodemailer": "^6.4.14"
+    "@types/nodemailer": "^6.4.14",
+    "critters": "^0.0.23"
   }
 }

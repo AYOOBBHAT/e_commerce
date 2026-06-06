@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 const ORDER_STATUS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  pending: 'default',
   processing: 'default',
   confirmed: 'secondary',
   shipped: 'secondary',

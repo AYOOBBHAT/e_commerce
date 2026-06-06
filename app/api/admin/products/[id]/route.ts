@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
+import { invalidateProductCache } from '@/lib/actions/products';
 
 export async function GET(
   request: NextRequest,
@@ -69,6 +70,9 @@ export async function PATCH(
     await connectToDatabase();
     const data = await request.json();
     
+    // Get old product data to check if quantity changed
+    const oldProduct = await Product.findById(params.id);
+    
     const product = await Product.findByIdAndUpdate(
       params.id,
       { $set: data },
@@ -80,6 +84,38 @@ export async function PATCH(
         { error: 'Product not found' },
         { status: 404, headers: { 'Cache-Control': 'no-store' } }
       );
+    }
+
+    // Check for low inventory alert if quantity is low
+    if (product.quantity <= 10 && (!oldProduct || oldProduct.quantity > 10)) {
+      try {
+        const { sendLowInventoryAlert } = await import('@/lib/email-service');
+        await sendLowInventoryAlert({
+          productName: product.name || 'Unknown Product',
+          productId: product._id.toString(),
+          currentQuantity: product.quantity || 0,
+          threshold: 10,
+        });
+      } catch (alertErr) {
+        console.error('Error sending low inventory alert:', alertErr);
+        // Don't fail product update if alert fails
+      }
+    }
+    
+    // Revalidate all product-related pages after update
+    try {
+      revalidatePath('/products');
+      revalidatePath('/products/featured');
+      if (product?.slug) {
+        revalidatePath(`/products/${product.slug}`);
+        // Invalidate Redis cache
+        await invalidateProductCache(product.slug, product.category);
+      }
+      if (product?.category) {
+        revalidatePath(`/category/${product.category}`);
+      }
+    } catch (e) {
+      console.warn('revalidatePath failed:', e);
     }
     
     return NextResponse.json(product, { headers: { 'Cache-Control': 'no-store' } });

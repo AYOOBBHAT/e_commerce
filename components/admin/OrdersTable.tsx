@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { MoreHorizontal, Eye, PackageCheck, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,14 +29,15 @@ const DEFAULT_LIMIT = 10;
 
 const getStatusColor = (status: string) => {
   switch (status) {
+    case 'pending':
     case 'processing':
       return 'default';
     case 'confirmed':
-      return 'secondary'; // changed from 'primary' to 'secondary'
+      return 'secondary';
     case 'shipped':
       return 'secondary';
     case 'delivered':
-      return 'outline'; // use 'outline' for delivered
+      return 'outline';
     case 'cancelled':
       return 'destructive';
     default:
@@ -44,6 +46,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function OrdersTable() {
+  const searchParams = useSearchParams();
   const [isUpdating, setIsUpdating] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -51,11 +54,19 @@ export default function OrdersTable() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  // filters
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
-  const [emailFilter, setEmailFilter] = useState<string>('');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
+  // filters - initialize from URL params
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(
+    searchParams?.get('status') || undefined
+  );
+  const [emailFilter, setEmailFilter] = useState<string>(
+    searchParams?.get('email') || ''
+  );
+  const [dateFrom, setDateFrom] = useState<string>(
+    searchParams?.get('dateFrom') || ''
+  );
+  const [dateTo, setDateTo] = useState<string>(
+    searchParams?.get('dateTo') || ''
+  );
 
   // undo map: orderId -> previousStatus
   const [undoMap, setUndoMap] = useState<Record<string, string>>({});

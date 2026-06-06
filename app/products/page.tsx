@@ -1,50 +1,44 @@
-'use client';
+import { getAllProducts } from '@/lib/actions/products';
+import ProductListClient from '@/components/product/ProductListClient';
 
-import { useEffect, useState } from 'react';
-import ProductGrid from '@/components/product/ProductGrid';
-import ProductCard from '@/components/product/ProductCard';
+// ISR: Revalidate every hour, or on-demand via tag revalidation
+export const revalidate = 3600;
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const metadata = {
+  title: 'All Products',
+  description: 'Browse our complete collection of farm-fresh staples, handmade treats, and wellness products.',
+  openGraph: {
+    title: 'All Products',
+    description: 'Browse our complete collection of farm-fresh staples, handmade treats, and wellness products.',
+  },
+};
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-  const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Failed to fetch products');
-        let data = await res.json();
-        // Map images[0] to image for compatibility with ProductCard
-        data = data.map((p: any) => ({ ...p, image: p.images?.[0] || '' }));
-        setProducts(data);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching products');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+export default async function ProductsPage() {
+  // Fetch products on the server (first page, 100 items for initial load)
+  const products = await getAllProducts();
 
   return (
-  <div className="container mx-auto px-4 py-12 bg-white text-black rounded-lg shadow-sm" style={{ color: '#000' }}>
-  <h1 className="text-2xl md:text-3xl font-bold mb-6 text-black bg-white w-full py-2" style={{ color: '#000' }}>All Products</h1>
-      {loading ? (
-        <div className="p-6 text-center">Loading products...</div>
-      ) : error ? (
-        <div className="p-6 text-center text-destructive">{error}</div>
-      ) : !products.length ? (
-        <div className="p-6 text-center">No products found.</div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product._id || product.id || product.slug} product={product} />
-          ))}
+    <section className="py-12 md:py-16 bg-gradient-to-b from-white via-slate-50 to-white">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-emerald-500">
+              All collections
+            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Shop Everything</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Farm-fresh staples, handmade treats, origin spices, and more—curated for daily
+              wellness.
+            </p>
+          </div>
         </div>
-      )}
-    </div>
+
+        {!products.length ? (
+          <div className="p-6 text-center">No products found.</div>
+        ) : (
+          <ProductListClient products={products} />
+        )}
+      </div>
+    </section>
   );
 }
