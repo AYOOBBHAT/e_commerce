@@ -1,10 +1,13 @@
 export const PRODUCT_CATEGORIES = [
   { id: 'handmade-healthy-bites', name: 'Handmade Healthy Bites' },
-  { id: 'customised-handmade', name: 'Customised Handmade' },
-  { id: 'kashmir-delights', name: 'Kashmir Delights' },
-  { id: 'seeds', name: 'Seeds' },
-  { id: 'spices', name: 'Spices' },
-  { id: 'farm-fresh-dry-fruits-nuts', name: 'Farm Fresh Dry Fruits & Nuts' },
+  { id: 'customised-handmade', name: 'Custom Chocolates' },
+  { id: 'kashmir-delights', name: 'Kashmiri Delights' },
+  { id: 'spices', name: 'Kashmiri Saffron' },
+  { id: 'kehwa', name: 'Kashmiri Kehwa' },
+  { id: 'farm-fresh-dry-fruits-nuts', name: 'Dry Fruits & Nuts' },
+  { id: 'seeds', name: 'Seeds & Superfoods' },
+  { id: 'honey', name: 'Raw Honey' },
+  { id: 'shilajit', name: 'Himalayan Shilajit' },
 ];
 
 export const PAYMENT_METHODS = [

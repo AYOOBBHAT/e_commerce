@@ -23,6 +23,22 @@ export interface IProduct extends Document {
     rating: number;
     review?: string;
   }[];
+  imageMeta?: {
+    url: string;
+    status: 'draft' | 'needs_review' | 'approved' | 'featured_ready';
+    scores?: {
+      lighting: number;
+      composition: number;
+      colorGrading: number;
+      brandFit: number;
+    };
+    consistencyScore?: number;
+    validationErrors: string[];
+    validationWarnings: string[];
+    width?: number;
+    height?: number;
+    analyzedAt?: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +69,28 @@ const productSchema = new Schema<IProduct>(
         userId: { type: Schema.Types.ObjectId, ref: 'User' },
         rating: { type: Number, required: true, min: 1, max: 5 },
         review: { type: String },
+      },
+    ],
+    imageMeta: [
+      {
+        url: { type: String, required: true },
+        status: {
+          type: String,
+          enum: ['draft', 'needs_review', 'approved', 'featured_ready'],
+          default: 'needs_review',
+        },
+        scores: {
+          lighting: Number,
+          composition: Number,
+          colorGrading: Number,
+          brandFit: Number,
+        },
+        consistencyScore: Number,
+        validationErrors: [{ type: String }],
+        validationWarnings: [{ type: String }],
+        width: Number,
+        height: Number,
+        analyzedAt: Date,
       },
     ],
   },

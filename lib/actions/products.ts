@@ -213,3 +213,52 @@ export async function getProductsByCategory(category: string) {
   return result.data;
 }
 
+export type CategoryStatsMap = Record<
+  string,
+  { count: number; fromPrice: number | null }
+>;
+
+// Aggregate in-stock product counts and minimum price per category slug
+export async function getCategoryStats(): Promise<CategoryStatsMap> {
+  await connectToDatabase();
+
+  const rows = await Product.aggregate<{
+    _id: string;
+    count: number;
+    fromPrice: number;
+  }>([
+    { $match: { inStock: true } },
+    {
+      $project: {
+        category: 1,
+        effectiveMinPrice: {
+          $min: {
+            $concatArrays: [
+              ['$price'],
+              {
+                $map: {
+                  input: { $ifNull: ['$variants', []] },
+                  as: 'variant',
+                  in: '$$variant.price',
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$category',
+        count: { $sum: 1 },
+        fromPrice: { $min: '$effectiveMinPrice' },
+      },
+    },
+  ]);
+
+  return rows.reduce<CategoryStatsMap>((acc, row) => {
+    acc[row._id] = { count: row.count, fromPrice: row.fromPrice ?? null };
+    return acc;
+  }, {});
+}
+

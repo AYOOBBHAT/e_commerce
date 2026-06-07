@@ -1,23 +1,34 @@
 import Hero from '@/components/home/Hero';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import CategoryGrid from '@/components/home/CategoryGrid';
+import TrustSection from '@/components/home/TrustSection';
 import AllProductsSection from '@/components/home/AllProductsSection';
 import { getFeaturedProducts, getProducts } from '@/lib/actions/products';
+import { canUseAsFeaturedMainImage } from '@/lib/product-image-quality';
 
 // ISR: Revalidate every hour
 export const revalidate = 3600;
 
 export default async function Home() {
   // Fetch products on the server
-  const featuredProducts = await getFeaturedProducts();
+  const featuredProducts = (await getFeaturedProducts()).filter((product) => {
+    const mainUrl = product.images?.[0]
+    if (!mainUrl) return false
+    const mainMeta = product.imageMeta?.find(
+      (entry: { url: string }) => entry.url === mainUrl,
+    )
+    if (!product.imageMeta?.length) return true
+    return canUseAsFeaturedMainImage(mainMeta)
+  });
   const { data: allProducts } = await getProducts();
 
   return (
     <div>
       <Hero />
 
-      <FeaturedProducts products={featuredProducts.slice(0, 6)} />
       <CategoryGrid />
+      <TrustSection />
+      <FeaturedProducts products={featuredProducts.slice(0, 6)} />
       <AllProductsSection products={allProducts} />
 
       {/* Promotional Banner */}

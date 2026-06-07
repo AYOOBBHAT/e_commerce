@@ -7,11 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
-import Image from "next/image";
-import { X } from "lucide-react";
-
-const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ecommerce_preset";
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+import ProductImageUploadPanel, { syncImageMetaWithUrls } from "@/components/admin/ProductImageUploadPanel";
+import type { ProductImageMeta } from "@/lib/product-image-quality";
+import { validateFeaturedProduct } from "@/lib/product-image-quality";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -19,8 +17,8 @@ export default function EditProductPage() {
   const productId = params?.id as string;
 
   const [isLoading, setIsLoading] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [imageMeta, setImageMeta] = useState<ProductImageMeta[]>([]);
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -56,6 +54,9 @@ export default function EditProductPage() {
           inStock: product.inStock,
         });
         setImages(product.images || []);
+        setImageMeta(
+          syncImageMetaWithUrls(product.images || [], product.imageMeta || []),
+        );
         setVariants(
           (product.variants || []).map((variant: any) => ({
             label: variant.label,
@@ -89,60 +90,6 @@ export default function EditProductPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    setImageUploading(true);
-    const uploadPromises = Array.from(files).map(async (file) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      try {
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
-        if (data.secure_url) {
-          return data.secure_url;
-        }
-        return null;
-      } catch {
-        return null;
-      }
-    });
-
-    try {
-      const uploadedUrls = await Promise.all(uploadPromises);
-      const validUrls = uploadedUrls.filter((url): url is string => url !== null);
-      if (validUrls.length > 0) {
-        setImages((prev) => [...prev, ...validUrls]);
-      } else {
-        alert("Image upload failed");
-      }
-    } catch {
-      alert("Image upload failed");
-    } finally {
-      setImageUploading(false);
-      // Reset input
-      e.target.value = "";
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    setImages((prev) => {
-      const newImages = [...prev];
-      const [moved] = newImages.splice(fromIndex, 1);
-      newImages.splice(toIndex, 0, moved);
-      return newImages;
-    });
-  };
-
   const handleAddVariant = () => {
     setVariants((prev) => [...prev, { label: "", price: "", comparePrice: "" }]);
   };
@@ -167,6 +114,15 @@ export default function EditProductPage() {
       alert("Please upload at least one product image");
       return;
     }
+    const featuredError = validateFeaturedProduct({
+      featured: form.featured,
+      images,
+      imageMeta,
+    });
+    if (featuredError) {
+      alert(featuredError);
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await fetch(`/api/admin/products/${productId}`, {
@@ -186,6 +142,7 @@ export default function EditProductPage() {
             })),
           quantity: parseInt(form.quantity, 10),
           images: images,
+          imageMeta: syncImageMetaWithUrls(images, imageMeta),
           inStock: parseInt(form.quantity, 10) > 0,
           featured: form.featured,
         }),
@@ -319,53 +276,19 @@ export default function EditProductPage() {
           <Label htmlFor="quantity">Quantity</Label>
           <Input id="quantity" name="quantity" type="number" min="0" value={form.quantity} onChange={handleChange} required />
         </div>
-        <div>
-          <Label htmlFor="images">Product Images</Label>
-          <p className="text-sm text-muted-foreground mb-2">First image will be the main display image. You can upload multiple images at once.</p>
-          <Input id="images" name="images" type="file" accept="image/*" multiple onChange={handleImageUpload} />
-          {imageUploading && <div className="text-sm text-muted-foreground mt-1">Uploading...</div>}
-          {images.length > 0 && (
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <div className="relative aspect-square rounded border overflow-hidden bg-gray-100">
-                      <Image 
-                        src={image} 
-                        alt={`Product image ${index + 1}`} 
-                        fill
-                        className="object-cover"
-                      />
-                      {index === 0 && (
-                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                          Main
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => moveImage(index, 0)}
-                        className="mt-1 text-xs text-primary hover:underline w-full text-center"
-                      >
-                        Set as main
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <ProductImageUploadPanel
+          images={images}
+          imageMeta={imageMeta}
+          onChange={(nextImages, nextMeta) => {
+            setImages(nextImages);
+            setImageMeta(nextMeta);
+          }}
+        />
         <div>
           <Label htmlFor="featured">Featured Product</Label>
+          <p className="text-xs text-muted-foreground mb-1">
+            Requires main image status Approved or Featured Ready (score ≥ 7.5).
+          </p>
           <input
             id="featured"
             name="featured"
@@ -375,7 +298,7 @@ export default function EditProductPage() {
             className="ml-2"
           />
         </div>
-        <Button type="submit" disabled={isLoading || imageUploading} className="w-full">
+        <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? "Updating..." : "Update Product"}
         </Button>
       </form>

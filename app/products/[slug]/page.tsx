@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/lib/actions/products';
-import ProductDetailInfo from '@/components/product/ProductDetailInfo';
 import ProductImageGallery from '@/components/product/ProductImageGallery';
+import ProductBuyBox from '@/components/product/pdp/ProductBuyBox';
 import { generateProductStructuredData, generateBreadcrumbStructuredData } from '@/lib/structured-data';
 import Script from 'next/script';
 
@@ -103,19 +103,19 @@ export default async function ProductPage({ params }: Props) {
         }}
       />
 
-      <section className="py-12 md:py-16 bg-gradient-to-b from-white via-slate-50 to-white">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="bg-[#FAF7F2] py-10 pb-28 md:py-14 md:pb-14 lg:pb-16">
+        <div className="container mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
             <div>
               {productImages.length > 0 ? (
                 <ProductImageGallery images={productImages} productName={product.name} />
               ) : (
-                <div className="w-full aspect-[4/5] bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400">
+                <div className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl bg-stone-100 text-stone-400">
                   No image available
                 </div>
               )}
             </div>
-            <ProductDetailInfo
+            <ProductBuyBox
               product={{
                 ...product,
                 _id: product._id?.toString() || product._id,

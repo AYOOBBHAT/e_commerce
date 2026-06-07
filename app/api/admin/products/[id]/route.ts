@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/lib/db';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
 import { invalidateProductCache } from '@/lib/actions/products';
+import { validateFeaturedProduct } from '@/lib/product-image-quality';
 
 export async function GET(
   request: NextRequest,
@@ -69,6 +70,15 @@ export async function PATCH(
 
     await connectToDatabase();
     const data = await request.json();
+
+    const featuredError = validateFeaturedProduct({
+      featured: Boolean(data.featured),
+      images: data.images || [],
+      imageMeta: data.imageMeta,
+    });
+    if (featuredError) {
+      return NextResponse.json({ error: featuredError }, { status: 400 });
+    }
     
     // Get old product data to check if quantity changed
     const oldProduct = await Product.findById(params.id);
