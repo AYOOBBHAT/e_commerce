@@ -23,6 +23,21 @@ export type ProductImageMeta = {
   analyzedAt?: string
 }
 
+export const ALLOWED_PRODUCT_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const
+
+export type AllowedProductImageMimeType =
+  (typeof ALLOWED_PRODUCT_IMAGE_MIME_TYPES)[number]
+
+export function isAllowedMimeType(
+  type: string,
+): type is AllowedProductImageMimeType {
+  return ALLOWED_PRODUCT_IMAGE_MIME_TYPES.some((allowed) => allowed === type)
+}
+
 export const IMAGE_QUALITY_RULES = {
   targetAspectRatio: 4 / 5,
   aspectToleranceStrict: 0.04,
@@ -34,7 +49,7 @@ export const IMAGE_QUALITY_RULES = {
   minBlurVariance: 120,
   whitePixelThreshold: 235,
   whiteBorderRatioReject: 0.82,
-  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  allowedMimeTypes: ALLOWED_PRODUCT_IMAGE_MIME_TYPES,
   featuredMinConsistencyScore: 7.5,
   featuredReadyMinScore: 8.5,
 } as const

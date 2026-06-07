@@ -2,6 +2,7 @@ import {
   IMAGE_QUALITY_RULES,
   averageScores,
   deriveAutoStatus,
+  isAllowedMimeType,
   type ProductImageMeta,
   type ProductImageScores,
 } from '@/lib/product-image-quality'
@@ -177,7 +178,7 @@ export async function analyzeProductImageFile(
   const errors: string[] = []
   const warnings: string[] = []
 
-  if (!IMAGE_QUALITY_RULES.allowedMimeTypes.includes(file.type)) {
+  if (!isAllowedMimeType(file.type)) {
     errors.push('File must be JPEG, PNG, or WebP.')
   }
 
