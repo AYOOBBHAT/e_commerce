@@ -1,6 +1,8 @@
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import CategoryCarousel from '@/components/home/CategoryCarousel'
+import CategoryCarousel, {
+  FEATURED_CAROUSEL_ITEM_CLASS,
+} from '@/components/home/CategoryCarousel'
 import {
   FeaturedProductCard,
   type FeaturedProduct,
@@ -51,9 +53,12 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
             {products.map((product) => (
               <div
                 key={product._id || product.id || product.slug}
-                className="w-[82vw] max-w-sm shrink-0 snap-start snap-always"
+                className={FEATURED_CAROUSEL_ITEM_CLASS}
               >
-                <FeaturedProductCard product={product} />
+                <FeaturedProductCard
+                  product={product}
+                  className="touch-pan-y"
+                />
               </div>
             ))}
           </CategoryCarousel>

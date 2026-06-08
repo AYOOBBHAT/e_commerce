@@ -25,7 +25,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { PRODUCT_CATEGORIES, SITE_NAME } from '@/lib/constants';
+import { SITE_NAME } from '@/lib/constants';
+import type { NavCategory } from '@/lib/category-types';
 import { useSession } from '../SessionProvider';
 import { useCart } from '../CartProvider';
 
@@ -35,9 +36,10 @@ interface HeaderProps {
     email: string;
     role: string;
   } | null;
+  navCategories: NavCategory[];
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, navCategories }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,9 +119,9 @@ export default function Header({ user }: HeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-64 mt-2">
-                {PRODUCT_CATEGORIES.map((category) => (
-                  <DropdownMenuItem key={category.id} className="p-0">
-                    <Link href={`/category/${category.id}`} className="w-full px-2 py-2 hover:bg-muted rounded-sm transition-colors">
+                {navCategories.map((category) => (
+                  <DropdownMenuItem key={category.slug} className="p-0">
+                    <Link href={`/category/${category.slug}`} className="w-full px-2 py-2 hover:bg-muted rounded-sm transition-colors">
                       {category.name}
                     </Link>
                   </DropdownMenuItem>
@@ -282,10 +284,10 @@ export default function Header({ user }: HeaderProps) {
             <div className="space-y-4">
               <p className="text-base font-semibold text-slate-900">Categories</p>
               <div className="grid grid-cols-2 gap-2">
-                {PRODUCT_CATEGORIES.map((category) => (
+                {navCategories.map((category) => (
                   <Link
-                    key={category.id}
-                    href={`/category/${category.id}`}
+                    key={category.slug}
+                    href={`/category/${category.slug}`}
                     className="block text-sm text-muted-foreground hover:text-primary py-2 px-3 rounded-lg hover:bg-muted transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >

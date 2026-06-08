@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import ProductImageUploadPanel, { syncImageMetaWithUrls } from "@/components/admin/ProductImageUploadPanel";
+import { useAdminCategoryOptions } from "@/components/admin/useAdminCategoryOptions";
 import type { ProductImageMeta } from "@/lib/product-image-quality";
 import { validateFeaturedProduct } from "@/lib/product-image-quality";
 
@@ -26,11 +26,12 @@ export default function EditProductPage() {
     price: "",
     comparePrice: "",
     unitLabel: "",
-    category: PRODUCT_CATEGORIES[0]?.id || "",
+    category: "",
     quantity: "",
     featured: false,
     inStock: true,
   });
+  const { options: categoryOptions } = useAdminCategoryOptions(form.category);
   const [variants, setVariants] = useState<
     { label: string; price: string; comparePrice: string }[]
   >([]);
@@ -267,8 +268,8 @@ export default function EditProductPage() {
         <div>
           <Label htmlFor="category">Category</Label>
           <select id="category" name="category" value={form.category} onChange={handleChange} className="w-full border rounded px-3 py-2">
-            {PRODUCT_CATEGORIES.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat.slug} value={cat.slug}>{cat.name}</option>
             ))}
           </select>
         </div>

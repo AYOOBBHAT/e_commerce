@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     if (product?.category) {
       revalidatePath(`/category/${product.category}`);
     }
+    revalidatePath('/');
   } catch (e) {
     console.warn('revalidatePath failed:', e);
   }

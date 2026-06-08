@@ -1,9 +1,14 @@
 import Link from 'next/link';
 import { ShoppingBag, Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
-import { SITE_NAME, PRODUCT_CATEGORIES } from '@/lib/constants';
+import { SITE_NAME } from '@/lib/constants';
+import type { NavCategory } from '@/lib/category-types';
 
-export default function Footer() {
+type FooterProps = {
+  navCategories: NavCategory[];
+};
+
+export default function Footer({ navCategories }: FooterProps) {
   const currentYear = new Date().getFullYear();
   
   return (
@@ -40,12 +45,10 @@ export default function Footer() {
           <div>
             <h3 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">Categories</h3>
             <ul className="space-y-2 sm:space-y-3">
-             
-              
-                {PRODUCT_CATEGORIES.map((category) => (
-                  <li key={category.id}>
+                {navCategories.map((category) => (
+                  <li key={category.slug}>
                     <Link 
-                      href={`/category/${category.id}`}
+                      href={`/category/${category.slug}`}
                       className="text-sm sm:text-base hover:text-primary transition-colors duration-300 block py-1"
                     >
                       {category.name}
@@ -113,23 +116,6 @@ export default function Footer() {
 </span>
               </li>
             </ul>
-            
-            {/* <div className="mt-6">
-              <h4 className="text-sm font-medium text-foreground mb-2">Subscribe to Newsletter</h4>
-              <form className="flex">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 min-w-0 px-3 py-2 text-sm rounded-l-md border border-border focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <button
-                  type="submit"
-                  className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium rounded-r-md hover:bg-primary/90 transition-colors"
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div> */}
           </div>
         </div>
         

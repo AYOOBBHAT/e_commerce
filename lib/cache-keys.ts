@@ -15,6 +15,10 @@ export const CacheKeys = {
     categories: () => 'products:categories',
   },
 
+  categories: {
+    all: () => 'categories:all',
+  },
+
   // Order cache keys (short TTL for sensitive data)
   orders: {
     byUserId: (userId: string, page?: number) => 
@@ -27,6 +31,7 @@ export const CacheKeys = {
     products: 'products',
     product: (id: string) => `product:${id}`,
     category: (category: string) => `category:${category}`,
+    categories: 'categories',
     orders: 'orders',
     order: (id: string) => `order:${id}`,
   },

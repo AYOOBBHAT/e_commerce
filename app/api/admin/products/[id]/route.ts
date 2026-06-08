@@ -42,6 +42,7 @@ export async function GET(
         revalidatePath(`/category/${product.category}`);
         revalidatedPaths.push(`/category/${product.category}`);
       }
+      revalidatePath('/');
     } catch (e) {
       console.warn('revalidatePath failed:', e);
     }
@@ -124,6 +125,7 @@ export async function PATCH(
       if (product?.category) {
         revalidatePath(`/category/${product.category}`);
       }
+      revalidatePath('/');
     } catch (e) {
       console.warn('revalidatePath failed:', e);
     }

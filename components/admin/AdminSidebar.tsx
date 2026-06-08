@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Package, Users, ShoppingCart,
-  Settings, ChevronDown, Menu
+  Settings, ChevronDown, Menu, Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,11 @@ const menuItems = [
     title: 'Products',
     href: '/admin/products',
     icon: Package,
+  },
+  {
+    title: 'Categories',
+    href: '/admin/categories',
+    icon: Layers,
   },
   {
     title: 'Orders',
@@ -57,7 +62,12 @@ export default function AdminSidebar() {
           {menuItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
-                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                variant={
+                  pathname === item.href ||
+                  (item.href !== '/admin' && pathname.startsWith(`${item.href}/`))
+                    ? 'secondary'
+                    : 'ghost'
+                }
                 className="w-full justify-start"
               >
                 <item.icon className="mr-2 h-4 w-4" />

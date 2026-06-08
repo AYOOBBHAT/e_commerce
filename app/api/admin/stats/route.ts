@@ -4,12 +4,7 @@ import Order from '@/models/Order';
 import User from '@/models/User';
 import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
-import { PRODUCT_CATEGORIES } from '@/lib/constants';
-
-const CATEGORY_LABELS = PRODUCT_CATEGORIES.reduce<Record<string, string>>((acc, category) => {
-  acc[category.id] = category.name;
-  return acc;
-}, {});
+import { getCategoryNameMap } from '@/lib/actions/categories';
 
 const mapStatusToBucket = (status?: string) => {
   const normalized = (status || '').toLowerCase();
@@ -30,6 +25,7 @@ export async function GET() {
     }
 
     await connectToDatabase();
+    const CATEGORY_LABELS = await getCategoryNameMap();
 
     const [orders, totalUsers] = await Promise.all([
       Order.find().populate('user', 'name email').lean(),

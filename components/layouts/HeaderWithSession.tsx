@@ -2,10 +2,14 @@
 
 import Header from './Header';
 import { useSession } from '../SessionProvider';
+import type { NavCategory } from '@/lib/category-types';
 
-export default function HeaderWithSession() {
+type HeaderWithSessionProps = {
+  navCategories: NavCategory[];
+};
+
+export default function HeaderWithSession({ navCategories }: HeaderWithSessionProps) {
   const { user } = useSession();
-  // Ensure user object matches Header's expected prop types
   const headerUser = user
     ? {
         name: user.name || '',
@@ -13,5 +17,5 @@ export default function HeaderWithSession() {
         role: user.role,
       }
     : null;
-  return <Header user={headerUser} />;
+  return <Header user={headerUser} navCategories={navCategories} />;
 }

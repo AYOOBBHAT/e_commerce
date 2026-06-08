@@ -1,16 +1,17 @@
-import { getCategoryStats, type CategoryStatsMap } from '@/lib/actions/products'
-import { CATEGORY_VISUALS } from '@/lib/category-content'
+import { getCategoryStats } from '@/lib/actions/products'
+import { getStorefrontCategories } from '@/lib/actions/categories'
 import CategoryCard from '@/components/home/CategoryCard'
 import CategoryCarousel, {
   CATEGORY_CAROUSEL_ITEM_CLASS,
 } from '@/components/home/CategoryCarousel'
 
-function resolveCategoryStats(categoryId: string, stats: CategoryStatsMap) {
-  return stats[categoryId] ?? { count: 0, fromPrice: null }
-}
-
 export default async function CategoryGrid() {
   const stats = await getCategoryStats()
+  const categories = await getStorefrontCategories(stats)
+
+  if (!categories.length) {
+    return null
+  }
 
   return (
     <section
@@ -31,13 +32,13 @@ export default async function CategoryGrid() {
         </header>
 
         <div className="lg:hidden">
-          <CategoryCarousel itemCount={CATEGORY_VISUALS.length}>
-            {CATEGORY_VISUALS.map((category, index) => {
-              const { count } = resolveCategoryStats(category.id, stats)
+          <CategoryCarousel itemCount={categories.length}>
+            {categories.map((category, index) => {
+              const count = stats[category.slug]?.count ?? 0
               return (
-                <div key={category.id} className={CATEGORY_CAROUSEL_ITEM_CLASS}>
+                <div key={category.slug} className={CATEGORY_CAROUSEL_ITEM_CLASS}>
                   <CategoryCard
-                    id={category.id}
+                    id={category.slug}
                     name={category.name}
                     image={category.image}
                     imageAlt={category.imageAlt}
@@ -51,12 +52,12 @@ export default async function CategoryGrid() {
         </div>
 
         <ul className="hidden list-none gap-x-5 gap-y-8 lg:grid lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
-          {CATEGORY_VISUALS.map((category, index) => {
-            const { count } = resolveCategoryStats(category.id, stats)
+          {categories.map((category, index) => {
+            const count = stats[category.slug]?.count ?? 0
             return (
-              <li key={category.id} className="min-w-0">
+              <li key={category.slug} className="min-w-0">
                 <CategoryCard
-                  id={category.id}
+                  id={category.slug}
                   name={category.name}
                   image={category.image}
                   imageAlt={category.imageAlt}

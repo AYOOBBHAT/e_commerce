@@ -93,14 +93,15 @@ export function FeaturedProductCard({ product, className }: FeaturedProductCardP
       <div className="group relative aspect-[4/5] overflow-hidden bg-[#FAF7F2]">
         <Link
           href={productHref}
-          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B87333]"
+          className="absolute inset-0 touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B87333]"
           aria-label={`View ${product.name}`}
         >
           <Image
             src={product.image || '/fallback.png'}
             alt=""
             fill
-            className="object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-[1.03]"
+            draggable={false}
+            className="pointer-events-none object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 82vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
             quality={85}

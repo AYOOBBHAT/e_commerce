@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import ProductImageUploadPanel, { syncImageMetaWithUrls } from "@/components/admin/ProductImageUploadPanel";
+import { useAdminCategoryOptions } from "@/components/admin/useAdminCategoryOptions";
 import type { ProductImageMeta } from "@/lib/product-image-quality";
 import { validateFeaturedProduct } from "@/lib/product-image-quality";
 
 export default function AddProductPage() {
   const router = useRouter();
+  const { options: categoryOptions } = useAdminCategoryOptions();
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [imageMeta, setImageMeta] = useState<ProductImageMeta[]>([]);
@@ -23,13 +24,19 @@ export default function AddProductPage() {
     price: "",
     comparePrice: "",
     unitLabel: "",
-    category: PRODUCT_CATEGORIES[0]?.id || "",
+    category: "",
     quantity: "",
     featured: false,
   });
   const [variants, setVariants] = useState<
     { label: string; price: string; comparePrice: string }[]
   >([]);
+
+  useEffect(() => {
+    if (!form.category && categoryOptions[0]?.slug) {
+      setForm((prev) => ({ ...prev, category: categoryOptions[0].slug }));
+    }
+  }, [categoryOptions, form.category]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type, value } = e.target;
@@ -224,8 +231,8 @@ export default function AddProductPage() {
         <div>
           <Label htmlFor="category">Category</Label>
           <select id="category" name="category" value={form.category} onChange={handleChange} className="w-full border rounded px-3 py-2">
-            {PRODUCT_CATEGORIES.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat.slug} value={cat.slug}>{cat.name}</option>
             ))}
           </select>
         </div>

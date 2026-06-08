@@ -13,6 +13,28 @@ type CategoryCarouselProps = {
 export const CATEGORY_CAROUSEL_CARD_WIDTH_RATIO = 0.76
 const CARD_GAP_PX = 12
 
+/** Shared track styles — native horizontal scroll, no touch-pan-x (blocks vertical page scroll) */
+const CAROUSEL_TRACK_CLASS = cn(
+  'flex gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain',
+  'scroll-smooth snap-x snap-proximity pb-1',
+  '-mx-4 px-4',
+  '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+  '[-webkit-overflow-scrolling:touch]',
+)
+
+/** Prioritize vertical page scroll when the gesture starts on a slide */
+export const CAROUSEL_SLIDE_CLASS = 'shrink-0 snap-start touch-pan-y'
+
+export const CATEGORY_CAROUSEL_ITEM_CLASS = cn(
+  CAROUSEL_SLIDE_CLASS,
+  'w-[76vw] max-w-[320px]',
+)
+
+export const FEATURED_CAROUSEL_ITEM_CLASS = cn(
+  CAROUSEL_SLIDE_CLASS,
+  'w-[82vw] max-w-sm',
+)
+
 export default function CategoryCarousel({
   itemCount,
   children,
@@ -42,11 +64,7 @@ export default function CategoryCarousel({
     <div>
       <div
         ref={scrollRef}
-        className={cn(
-          'flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1',
-          '-mx-4 px-4 touch-pan-x',
-          '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
-        )}
+        className={CAROUSEL_TRACK_CLASS}
         aria-label={ariaLabel}
       >
         {children}
@@ -73,6 +91,3 @@ export default function CategoryCarousel({
     </div>
   )
 }
-
-export const CATEGORY_CAROUSEL_ITEM_CLASS =
-  'w-[76vw] max-w-[320px] shrink-0 snap-start snap-always'

@@ -3,17 +3,17 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import SessionProvider, { useSession } from '@/components/SessionProvider';
+import SessionProvider from '@/components/SessionProvider';
 import HeaderWithSession from '@/components/layouts/HeaderWithSession';
 import Footer from '@/components/layouts/Footer';
 import { SITE_NAME } from '@/lib/constants';
 import { CartProvider } from '@/components/CartProvider';
 import { generateOrganizationStructuredData, generateWebsiteStructuredData } from '@/lib/structured-data';
 import Script from 'next/script';
+import { getNavCategories } from '@/lib/actions/categories';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourstore.com';
 
-// Optimize font loading with display swap and subset optimization
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
@@ -48,13 +48,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const orgStructuredData = generateOrganizationStructuredData(baseUrl);
   const websiteStructuredData = generateWebsiteStructuredData(baseUrl);
+  const navCategories = await getNavCategories();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -83,11 +84,11 @@ export default function RootLayout({
         >
           <SessionProvider>
             <CartProvider>
-              <HeaderWithSession />
+              <HeaderWithSession navCategories={navCategories} />
               <main className="flex-grow pt-14 sm:pt-16 lg:pt-20">
                 {children}
               </main>
-              <Footer />
+              <Footer navCategories={navCategories} />
             </CartProvider>
           </SessionProvider>
           <Toaster />
