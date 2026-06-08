@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { connectToDatabase } from '@/lib/db'
 import Category from '@/models/Category'
 import { getCached, invalidateByTags } from '@/lib/redis'
@@ -21,6 +21,7 @@ function serializeCategory(doc: {
   slug: string
   name: string
   image: string
+  imagePublicId?: string
   imageAlt: string
   sortOrder: number
   isActive: boolean
@@ -30,6 +31,7 @@ function serializeCategory(doc: {
     slug: doc.slug,
     name: doc.name,
     image: doc.image,
+    imagePublicId: doc.imagePublicId || undefined,
     imageAlt: doc.imageAlt,
     sortOrder: doc.sortOrder,
     isActive: doc.isActive,
@@ -95,7 +97,14 @@ export async function getCategoryNameMap(): Promise<Record<string, string>> {
   }, {})
 }
 
-export async function invalidateCategoryCache() {
+export async function invalidateCategoryCache(slug?: string) {
   await invalidateByTags([CacheKeys.tags.categories])
+
+  revalidatePath('/', 'layout')
   revalidatePath('/')
+
+  if (slug) {
+    revalidatePath(`/category/${slug}`)
+    revalidateTag(CacheKeys.tags.category(slug))
+  }
 }

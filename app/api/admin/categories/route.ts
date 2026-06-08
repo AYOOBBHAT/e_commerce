@@ -9,6 +9,7 @@ function serializeCategory(doc: {
   slug: string
   name: string
   image: string
+  imagePublicId?: string
   imageAlt: string
   sortOrder: number
   isActive: boolean
@@ -18,6 +19,7 @@ function serializeCategory(doc: {
     slug: doc.slug,
     name: doc.name,
     image: doc.image,
+    imagePublicId: doc.imagePublicId || '',
     imageAlt: doc.imageAlt,
     sortOrder: doc.sortOrder,
     isActive: doc.isActive,
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
     const slug = normalizeSlug(data.slug || data.name || '')
     const name = String(data.name || '').trim()
     const image = String(data.image || '').trim()
+    const imagePublicId = String(data.imagePublicId || '').trim()
     const imageAlt = String(data.imageAlt || name).trim()
 
     if (!slug || !name) {
@@ -109,13 +112,14 @@ export async function POST(request: NextRequest) {
       slug,
       name,
       image,
+      imagePublicId,
       imageAlt,
       sortOrder,
       isActive: data.isActive !== false,
       hideWhenEmpty: data.hideWhenEmpty !== false,
     })
 
-    await invalidateCategoryCache()
+    await invalidateCategoryCache(slug)
 
     return NextResponse.json(serializeCategory(category.toObject()), {
       status: 201,

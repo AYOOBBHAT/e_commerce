@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db'
 import Category from '@/models/Category'
 import { getServerSession } from '@/lib/auth'
 import { invalidateCategoryCache } from '@/lib/actions/categories'
+import { cleanupReplacedCategoryImage } from '@/lib/category-image-lifecycle'
 import type { CategoryRecord } from '@/lib/category-types'
 
 type RouteContext = { params: { slug: string } }
@@ -11,6 +12,7 @@ function serializeCategory(doc: {
   slug: string
   name: string
   image: string
+  imagePublicId?: string
   imageAlt: string
   sortOrder: number
   isActive: boolean
@@ -20,6 +22,7 @@ function serializeCategory(doc: {
     slug: doc.slug,
     name: doc.name,
     image: doc.image,
+    imagePublicId: doc.imagePublicId || '',
     imageAlt: doc.imageAlt,
     sortOrder: doc.sortOrder,
     isActive: doc.isActive,
@@ -62,7 +65,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const data = await request.json()
     await connectToDatabase()
 
+    const existing = await Category.findOne({ slug: params.slug })
+    if (!existing) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    }
+
     const update: Record<string, unknown> = {}
+    let nextPublicId: string | undefined
 
     if (typeof data.name === 'string' && data.name.trim()) {
       update.name = data.name.trim()
@@ -76,6 +85,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         )
       }
       update.image = image
+    }
+    if (typeof data.imagePublicId === 'string') {
+      nextPublicId = data.imagePublicId.trim()
+      update.imagePublicId = nextPublicId
     }
     if (typeof data.imageAlt === 'string') {
       update.imageAlt = data.imageAlt.trim()
@@ -94,19 +107,29 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    const category = await Category.findOneAndUpdate(
-      { slug: params.slug },
-      { $set: update },
-      { new: true },
-    ).lean()
+    const imageChanged =
+      typeof update.image === 'string' && update.image !== existing.image
 
-    if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    if (imageChanged || typeof update.imagePublicId === 'string') {
+      await cleanupReplacedCategoryImage({
+        previousPublicId: existing.imagePublicId,
+        previousUrl: existing.image,
+        nextPublicId:
+          nextPublicId ??
+          (typeof update.imagePublicId === 'string'
+            ? update.imagePublicId
+            : existing.imagePublicId),
+        nextUrl:
+          typeof update.image === 'string' ? update.image : existing.image,
+      })
     }
 
-    await invalidateCategoryCache()
+    existing.set(update)
+    await existing.save()
 
-    return NextResponse.json(serializeCategory(category as unknown as CategoryRecord), {
+    await invalidateCategoryCache(params.slug)
+
+    return NextResponse.json(serializeCategory(existing.toObject()), {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (error) {

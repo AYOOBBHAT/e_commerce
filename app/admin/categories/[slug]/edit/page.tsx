@@ -13,6 +13,7 @@ type CategoryForm = {
   slug: string
   name: string
   image: string
+  imagePublicId: string
   imageAlt: string
   isActive: boolean
   hideWhenEmpty: boolean
@@ -57,6 +58,7 @@ export default function EditCategoryPage({ params }: { params: { slug: string } 
           body: JSON.stringify({
             name: form.name,
             image: form.image,
+            imagePublicId: form.imagePublicId,
             imageAlt: form.imageAlt,
             isActive: form.isActive,
             hideWhenEmpty: form.hideWhenEmpty,
@@ -100,8 +102,15 @@ export default function EditCategoryPage({ params }: { params: { slug: string } 
 
         <CategoryImageUpload
           image={form.image}
+          imagePublicId={form.imagePublicId}
           imageAlt={form.imageAlt}
-          onImageChange={(image) => setForm({ ...form, image })}
+          onImageChange={(asset) =>
+            setForm({
+              ...form,
+              image: asset?.url ?? '',
+              imagePublicId: asset?.publicId ?? '',
+            })
+          }
         />
 
         <div className="space-y-2">

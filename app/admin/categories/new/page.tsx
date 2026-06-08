@@ -25,6 +25,7 @@ export default function NewCategoryPage() {
     name: '',
     slug: '',
     image: '',
+    imagePublicId: '',
     imageAlt: '',
     isActive: true,
     hideWhenEmpty: true,
@@ -96,8 +97,15 @@ export default function NewCategoryPage() {
 
         <CategoryImageUpload
           image={form.image}
+          imagePublicId={form.imagePublicId}
           imageAlt={form.imageAlt}
-          onImageChange={(image) => setForm((prev) => ({ ...prev, image }))}
+          onImageChange={(asset) =>
+            setForm((prev) => ({
+              ...prev,
+              image: asset?.url ?? '',
+              imagePublicId: asset?.publicId ?? '',
+            }))
+          }
         />
 
         <div className="space-y-2">
