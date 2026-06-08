@@ -34,9 +34,27 @@ export async function POST(request: NextRequest) {
     // Try to find merchant order id via payload (if order object has receipt or if we stored mapping earlier)
     // We'll call the shared finalizer with CAPTURED for payment.captured
     if (event === 'payment.captured' || event === 'payment.authorized' || event === 'order.paid') {
-      await finalizeOrder({ provider: 'razorpay', merchantOrderId: String(razorpayOrderId), txId: String(razorpayPaymentId), state: 'CAPTURED', providerResponse: body });
+      const result = await finalizeOrder({
+        provider: 'razorpay',
+        merchantOrderId: String(razorpayOrderId),
+        txId: String(razorpayPaymentId),
+        state: 'CAPTURED',
+        providerResponse: body,
+      });
+      if (!result.ok && result.inventoryError) {
+        console.error('[razorpay][callback] inventory finalize failed', {
+          razorpayOrderId,
+          inventoryError: result.inventoryError,
+        });
+      }
     } else if (event === 'payment.failed') {
-      await finalizeOrder({ provider: 'razorpay', merchantOrderId: String(razorpayOrderId), txId: String(razorpayPaymentId), state: 'FAILED', providerResponse: body });
+      await finalizeOrder({
+        provider: 'razorpay',
+        merchantOrderId: String(razorpayOrderId),
+        txId: String(razorpayPaymentId),
+        state: 'FAILED',
+        providerResponse: body,
+      });
     } else {
       console.info('[razorpay][callback] unhandled event', event);
     }

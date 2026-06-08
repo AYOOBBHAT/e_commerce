@@ -2,10 +2,14 @@
 
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
-import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
 import { getRedisClient } from '@/lib/redis';
 import { generateIdempotencyKey } from '@/lib/utils/idempotency';
+import { normalizeOrderItemPayload } from '@/lib/cart/identity';
+import {
+  decrementInventoryForOrderItems,
+  validateOrderFromClient,
+} from '@/lib/cart/validation.server';
 import crypto from 'crypto';
 
 // Idempotency helper - prevents duplicate orders
@@ -46,7 +50,10 @@ export async function createOrder(data: {
   address: any;
   paymentMethod: string;
   items: Array<{
-    id: string;
+    id?: string;
+    productId?: string;
+    variantId?: string;
+    variantLabel?: string;
     name: string;
     price: number;
     quantity: number;
@@ -89,35 +96,24 @@ export async function createOrder(data: {
   // Generate unique order ID
   const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 
-  // Prepare order items
-  const orderItems: any[] = [];
-  for (const item of data.items || []) {
-    let productId = null;
-    if (item?.id) {
-      const productDoc = await Product.findById(item.id);
-      if (productDoc) {
-        productId = productDoc._id;
+  const normalizedItems = (data.items || [])
+    .map((item) => normalizeOrderItemPayload(item))
+    .filter(Boolean);
 
-        // Only reduce stock immediately for COD orders
-        if (data.paymentMethod === 'cod') {
-          const currentQty = typeof productDoc.quantity === 'number' ? productDoc.quantity : 0;
-          const updatedQty = Math.max(0, currentQty - (item.quantity || 0));
-          productDoc.quantity = updatedQty;
-          productDoc.inStock = updatedQty > 0;
-          await productDoc.save();
-        }
-      }
+  const validatedOrder = await validateOrderFromClient(
+    normalizedItems as any,
+    data.total,
+  );
+
+  const orderItems = validatedOrder.orderItems;
+  const validatedTotal = validatedOrder.total;
+
+  if (data.paymentMethod === 'cod') {
+    try {
+      await decrementInventoryForOrderItems(orderItems);
+    } catch (invErr: any) {
+      throw new Error(invErr?.message || 'Insufficient stock for one or more items.');
     }
-
-    const orderItem: any = {
-      name: item.name || '',
-      image: item.image || '',
-      price: item.price || 0,
-      quantity: item.quantity || 0,
-    };
-    if (productId) orderItem.product = productId;
-
-    orderItems.push(orderItem);
   }
 
   const status = 'pending';
@@ -132,8 +128,8 @@ export async function createOrder(data: {
     shippingAddress: shippingAddressValue,
     items: orderItems,
     orderItems,
-    total: data.total,
-    totalPrice: data.total,
+    total: validatedTotal,
+    totalPrice: validatedTotal,
     paymentMethod: data.paymentMethod,
     paymentStatus,
     paymentInfo: {
@@ -141,6 +137,7 @@ export async function createOrder(data: {
       status: 'pending',
     },
     status,
+    inventoryAdjusted: data.paymentMethod === 'cod',
   };
 
   const order = await Order.create(orderPayload);
@@ -150,7 +147,7 @@ export async function createOrder(data: {
 
   return {
     success: true,
-    orderId: order.orderId,
+    orderId: order.orderId || orderId,
     id: order._id.toString(),
     fromCache: false,
   };

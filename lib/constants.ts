@@ -27,3 +27,6 @@ export const ORDER_STATUS = [
 ];
 
 export const SITE_NAME = 'ZeeShaEla & Co.';
+
+/** Placeholder when a product has no image URL in the catalog. */
+export const PRODUCT_FALLBACK_IMAGE = '/fallback.png';

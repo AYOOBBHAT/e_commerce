@@ -2,8 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useCart } from '@/components/CartProvider'
+import { createCartItem } from '@/lib/cart/identity'
+import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants'
 import {
   formatProductSavings,
   getCategoryTrustBadges,
@@ -38,6 +41,13 @@ interface ProductCardProps {
   priority?: boolean
 }
 
+const ctaButtonClass = cn(
+  'inline-flex h-10 w-full items-center justify-center rounded-full text-xs font-semibold sm:h-11 sm:text-sm',
+  'bg-stone-900 text-white hover:bg-stone-800',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B87333] focus-visible:ring-offset-2',
+)
+
 export default function ProductCard({
   product,
   className,
@@ -46,35 +56,65 @@ export default function ProductCard({
   const { addToCart } = useCart()
   const [adding, setAdding] = useState(false)
 
+  const hasMultipleVariants = (product.variants?.length ?? 0) > 1
   const primaryVariant = product.variants?.[0]
   const variantAvailable = primaryVariant ? primaryVariant.inStock !== false : true
-  const displayPrice = primaryVariant?.price ?? product.price
-  const displayComparePrice =
-    primaryVariant?.comparePrice ?? product.comparePrice ?? undefined
-  const displayUnitLabel = primaryVariant?.label || product.unitLabel
+
+  const { displayPrice, displayComparePrice } = useMemo(() => {
+    if (hasMultipleVariants && product.variants?.length) {
+      const lowestPriceVariant = product.variants.reduce((min, variant) =>
+        variant.price < min.price ? variant : min,
+      )
+      return {
+        displayPrice: lowestPriceVariant.price,
+        displayComparePrice: lowestPriceVariant.comparePrice ?? product.comparePrice,
+      }
+    }
+
+    return {
+      displayPrice: primaryVariant?.price ?? product.price,
+      displayComparePrice: primaryVariant?.comparePrice ?? product.comparePrice ?? undefined,
+    }
+  }, [hasMultipleVariants, primaryVariant, product])
+
+  const displayUnitLabel = hasMultipleVariants
+    ? 'Multiple Options Available'
+    : primaryVariant?.label || product.unitLabel
 
   const trustBadges = getCategoryTrustBadges(product.category)
   const benefitLine = trustBadges[0]
   const socialProof = getProductSocialProof(product)
-  const savingsMeta = formatProductSavings(displayPrice, displayComparePrice)
+  const savingsMeta = hasMultipleVariants
+    ? null
+    : formatProductSavings(displayPrice, displayComparePrice)
 
   const productHref = `/products/${product.slug}`
-  const isAvailable = product.inStock && variantAvailable
+  const productImage = product.image?.trim() ? product.image : PRODUCT_FALLBACK_IMAGE
+
+  const isAvailable = hasMultipleVariants
+    ? product.inStock &&
+      product.variants!.some((variant) => variant.inStock !== false)
+    : product.inStock && variantAvailable
 
   const handleAddToCart = () => {
-    if (!isAvailable || adding) return
+    if (!isAvailable || adding || hasMultipleVariants) return
 
     setAdding(true)
-    addToCart({
-      id:
-        (product.id || product._id || '') +
-        (primaryVariant?.label ? `-${primaryVariant.label}` : ''),
-      name: product.name,
-      price: displayPrice,
-      image: product.image || '/fallback.png',
-      quantity: 1,
-      unitLabel: displayUnitLabel,
-      variantLabel: primaryVariant?.label,
+    addToCart(
+      createCartItem({
+        productId: product.id || product._id || '',
+        name: product.name,
+        price: displayPrice,
+        image: productImage,
+        quantity: 1,
+        unitLabel: primaryVariant?.label || product.unitLabel,
+        variantLabel: primaryVariant?.label,
+        variants: product.variants,
+      }),
+    )
+
+    toast.success('Added to cart', {
+      description: product.name,
     })
 
     setTimeout(() => setAdding(false), 1200)
@@ -96,7 +136,7 @@ export default function ProductCard({
           aria-label={`View ${product.name}`}
         >
           <Image
-            src={product.image || '/fallback.png'}
+            src={productImage}
             alt={product.name}
             fill
             priority={priority}
@@ -108,7 +148,7 @@ export default function ProductCard({
           />
         </Link>
 
-        {!product.inStock && (
+        {!isAvailable && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-950/40">
             <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-stone-900">
               Out of stock
@@ -140,6 +180,11 @@ export default function ProductCard({
 
         <div className="mt-2 space-y-0.5">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            {hasMultipleVariants && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:text-xs">
+                From
+              </span>
+            )}
             <span className="text-base font-bold text-stone-900 sm:text-lg">
               ₹{displayPrice.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
             </span>
@@ -165,20 +210,25 @@ export default function ProductCard({
         <p className="mt-1.5 line-clamp-1 text-xs text-stone-600">{benefitLine}</p>
 
         <div className="mt-auto pt-3">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!isAvailable || adding}
-            aria-label={`Add ${product.name} to cart`}
-            className={cn(
-              'h-10 w-full rounded-full text-xs font-semibold sm:h-11 sm:text-sm',
-              'bg-stone-900 text-white hover:bg-stone-800',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B87333] focus-visible:ring-offset-2',
-            )}
-          >
-            {!isAvailable ? 'Out of Stock' : adding ? 'Adding...' : 'Add to Cart'}
-          </button>
+          {hasMultipleVariants ? (
+            <Link
+              href={productHref}
+              aria-label={`View options for ${product.name}`}
+              className={cn(ctaButtonClass, !isAvailable && 'pointer-events-none opacity-50')}
+            >
+              {isAvailable ? 'View Options' : 'Out of Stock'}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!isAvailable || adding}
+              aria-label={`Add ${product.name} to cart`}
+              className={ctaButtonClass}
+            >
+              {!isAvailable ? 'Out of Stock' : adding ? 'Adding...' : 'Add to Cart'}
+            </button>
+          )}
         </div>
       </div>
     </article>

@@ -99,17 +99,70 @@ export function deriveAutoStatus(input: {
   return 'needs_review'
 }
 
-export function canUseAsFeaturedMainImage(meta?: ProductImageMeta): boolean {
+export function meetsImageAnalysisRequirements(
+  meta?: ProductImageMeta,
+): boolean {
   if (!meta) return false
-  if (meta.validationErrors.length > 0) return false
-  if (meta.status !== 'approved' && meta.status !== 'featured_ready') return false
-  if (
-    typeof meta.consistencyScore === 'number' &&
-    meta.consistencyScore < IMAGE_QUALITY_RULES.featuredMinConsistencyScore
-  ) {
+  if (meta.validationErrors?.length > 0) return false
+  if (typeof meta.consistencyScore !== 'number') return false
+  if (!meta.scores) return false
+  if (!meta.analyzedAt) return false
+
+  const { lighting, composition, colorGrading, brandFit } = meta.scores
+  return [lighting, composition, colorGrading, brandFit].every(
+    (value) => typeof value === 'number' && Number.isFinite(value),
+  )
+}
+
+export function isAllowedManualImageStatus(
+  meta: ProductImageMeta,
+  status: ProductImageStatus,
+): boolean {
+  if (status === 'draft' || status === 'needs_review') return true
+  if (!meetsImageAnalysisRequirements(meta)) return false
+  if (status === 'approved') {
+    return meta.consistencyScore! >= 6.5
+  }
+  if (status === 'featured_ready') {
+    return meta.consistencyScore! >= IMAGE_QUALITY_RULES.featuredReadyMinScore
+  }
+  return false
+}
+
+export function sanitizeProductImageMeta(
+  imageMeta: ProductImageMeta[] = [],
+): ProductImageMeta[] {
+  return imageMeta.map((entry) => {
+    if (
+      (entry.status === 'approved' || entry.status === 'featured_ready') &&
+      !isAllowedManualImageStatus(entry, entry.status)
+    ) {
+      return {
+        ...entry,
+        status: 'needs_review',
+      }
+    }
+    return entry
+  })
+}
+
+export function canUseAsFeaturedMainImage(meta?: ProductImageMeta): boolean {
+  if (!meetsImageAnalysisRequirements(meta)) return false
+  if (meta!.status !== 'approved' && meta!.status !== 'featured_ready') {
     return false
   }
-  return true
+  return meta!.consistencyScore! >= IMAGE_QUALITY_RULES.featuredMinConsistencyScore
+}
+
+export function getMainImageStatusLabel(
+  images: string[] = [],
+  imageMeta: ProductImageMeta[] = [],
+): string {
+  const mainUrl = images[0]
+  if (!mainUrl) return 'No image'
+  const meta = imageMeta.find((entry) => entry.url === mainUrl)
+  if (!meta) return 'Not analyzed'
+  return IMAGE_STATUS_LABELS[meta.status] || meta.status
 }
 
 export function syncImageMetaWithUrls(
@@ -139,7 +192,7 @@ export function validateFeaturedProduct(input: {
   const mainMeta = input.imageMeta?.find((entry) => entry.url === mainUrl)
 
   if (!canUseAsFeaturedMainImage(mainMeta)) {
-    return 'Featured products require a main image with Approved or Featured Ready status and a consistency score of at least 7.5.'
+    return 'Featured products require an analyzed main image (Approved or Featured Ready) with a consistency score of at least 7.5 and no validation errors.'
   }
 
   return null

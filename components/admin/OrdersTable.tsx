@@ -20,6 +20,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ORDER_STATUS } from '@/lib/constants';
+import { getOrderCustomerDisplay } from '@/lib/orders/admin-display';
+import {
+  formatPaymentStatusLabel,
+} from '@/lib/orders/status-transitions';
+import { formatOrderPaymentMethod } from '@/lib/order-success-content';
 
 import { useEffect, useCallback } from 'react';
 
@@ -67,6 +72,9 @@ export default function OrdersTable() {
   const [dateTo, setDateTo] = useState<string>(
     searchParams?.get('dateTo') || ''
   );
+  const [searchFilter, setSearchFilter] = useState<string>(
+    searchParams?.get('search') || searchParams?.get('q') || ''
+  );
 
   // undo map: orderId -> previousStatus
   const [undoMap, setUndoMap] = useState<Record<string, string>>({});
@@ -80,6 +88,7 @@ export default function OrdersTable() {
       if (emailFilter) qs.set('email', emailFilter);
       if (dateFrom) qs.set('dateFrom', dateFrom);
       if (dateTo) qs.set('dateTo', dateTo);
+      if (searchFilter.trim()) qs.set('search', searchFilter.trim());
       const res = await fetch(`/api/admin/orders?${qs.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch orders');
       const json = await res.json();
@@ -92,7 +101,7 @@ export default function OrdersTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, emailFilter, dateFrom, dateTo]);
+  }, [page, limit, statusFilter, emailFilter, dateFrom, dateTo, searchFilter]);
 
   useEffect(() => {
     fetchOrders();
@@ -112,7 +121,8 @@ export default function OrdersTable() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update order status');
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || 'Failed to update order status');
       }
 
       // response returns { order, previousStatus }
@@ -140,7 +150,8 @@ export default function OrdersTable() {
       }
     } catch (error) {
       console.error('Error updating order:', error);
-      alert('Failed to update order status');
+      alert(error instanceof Error ? error.message : 'Failed to update order status');
+      await fetchOrders(page, limit);
     } finally {
       setIsUpdating(false);
     }
@@ -177,6 +188,8 @@ export default function OrdersTable() {
             <TableHead>Date</TableHead>
             <TableHead>Items</TableHead>
             <TableHead>Total</TableHead>
+            <TableHead>Payment</TableHead>
+            <TableHead>Pay status</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -184,27 +197,38 @@ export default function OrdersTable() {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7}>Loading...</TableCell>
+              <TableCell colSpan={9}>Loading...</TableCell>
             </TableRow>
           ) : orders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7}>No orders found.</TableCell>
+              <TableCell colSpan={9}>No orders found.</TableCell>
             </TableRow>
           ) : (
-            orders.map((order) => (
+            orders.map((order) => {
+              const customer = getOrderCustomerDisplay(order);
+              const paymentMethod = order.paymentInfo?.method || order.paymentMethod;
+              const paymentStatus = order.paymentInfo?.status || order.paymentStatus;
+              return (
               <TableRow key={order._id || order.id}>
                 <TableCell className="font-medium">{order.orderId || order._id || order.id}</TableCell>
                 <TableCell>
                   <div>
-                    <div className="font-medium">{order.user?.name || order.customer || '—'}</div>
+                    <div className="font-medium">{customer.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {order.user?.email || order.email || '—'}
+                      {customer.email}
                     </div>
+                    {customer.phone !== '—' && (
+                      <div className="text-sm text-muted-foreground">
+                        {customer.phone}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || '—')}</TableCell>
-                <TableCell>{order.items ? order.items.length : (order.orderItems ? order.orderItems.length : '—')}</TableCell>
-                <TableCell>₹{order.total || order.totalPrice || order.amount || 0}</TableCell>
+                <TableCell>{order.orderItems ? order.orderItems.length : (order.items ? order.items.length : '—')}</TableCell>
+                <TableCell>₹{order.totalPrice || order.total || order.amount || 0}</TableCell>
+                <TableCell>{formatOrderPaymentMethod(paymentMethod)}</TableCell>
+                <TableCell>{formatPaymentStatusLabel(paymentStatus)}</TableCell>
                 <TableCell>
                   <select
                     className="border rounded px-2 py-1"
@@ -252,7 +276,9 @@ export default function OrdersTable() {
                           Confirm Order
                         </DropdownMenuItem>
                       )}
-                      {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                      {order.status !== 'cancelled' &&
+                        order.status !== 'delivered' &&
+                        order.status !== 'shipped' && (
                         <DropdownMenuItem
                           onClick={() => handleUpdateStatus(order._id || order.id, 'cancelled')}
                           disabled={isUpdating}
@@ -274,7 +300,8 @@ export default function OrdersTable() {
                   )}
                 </TableCell>
               </TableRow>
-            ))
+            );
+            })
           )}
         </TableBody>
       </Table>
@@ -290,6 +317,15 @@ export default function OrdersTable() {
             </select>
           </div>
           <div className="flex items-center gap-2">
+            <label className="text-sm">Search</label>
+            <input
+              className="border rounded px-2 py-1 min-w-[200px]"
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              placeholder="Order ID, email, phone, name"
+            />
+          </div>
+          <div className="flex items-center gap-2">
             <label className="text-sm">Email</label>
             <input className="border rounded px-2 py-1" value={emailFilter} onChange={(e) => setEmailFilter(e.target.value)} placeholder="user@example.com" />
           </div>
@@ -300,13 +336,14 @@ export default function OrdersTable() {
             <input type="date" className="border rounded px-2 py-1" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           <Button onClick={() => { setPage(1); fetchOrders(1, limit); }}>Apply</Button>
-          <Button onClick={() => { setStatusFilter(undefined); setEmailFilter(''); setDateFrom(''); setDateTo(''); setPage(1); fetchOrders(1, limit); }}>Clear</Button>
+          <Button onClick={() => { setStatusFilter(undefined); setEmailFilter(''); setSearchFilter(''); setDateFrom(''); setDateTo(''); setPage(1); fetchOrders(1, limit); }}>Clear</Button>
           <div>
             <Button onClick={async () => {
               try {
                 const qs = new URLSearchParams();
                 if (statusFilter) qs.set('status', statusFilter);
                 if (emailFilter) qs.set('email', emailFilter);
+                if (searchFilter.trim()) qs.set('search', searchFilter.trim());
                 if (dateFrom) qs.set('dateFrom', dateFrom);
                 if (dateTo) qs.set('dateTo', dateTo);
                 const res = await fetch(`/api/admin/orders?export=csv&${qs.toString()}`);

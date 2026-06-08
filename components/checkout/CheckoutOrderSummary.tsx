@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import type { CartItem } from '@/components/CartProvider'
+import { ORDER_SHIPPING_DISPLAY } from '@/lib/checkout-content'
 
 type CheckoutOrderSummaryProps = {
   cart: CartItem[]
@@ -61,12 +62,13 @@ export default function CheckoutOrderSummary({
         </div>
         <div className="flex items-center justify-between text-stone-600">
           <span>Shipping</span>
-          <span className="text-[#4A6741]">Calculated at dispatch</span>
+          <span className="text-stone-500">{ORDER_SHIPPING_DISPLAY.lineLabel}</span>
         </div>
+        <p className="text-xs text-stone-500">{ORDER_SHIPPING_DISPLAY.summaryNote}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-4">
-        <span className="text-base font-semibold text-stone-900">Total</span>
+        <span className="text-base font-semibold text-stone-900">Item total</span>
         <span className="text-xl font-bold text-stone-900">
           ₹{total.toLocaleString('en-IN')}
         </span>

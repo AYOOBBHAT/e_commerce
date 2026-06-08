@@ -12,6 +12,8 @@ import {
   getProductSocialProof,
   getStarString,
 } from '@/lib/product-display'
+import { createCartItem } from '@/lib/cart/identity'
+import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 export interface FeaturedProduct {
@@ -66,17 +68,18 @@ export function FeaturedProductCard({ product, className }: FeaturedProductCardP
     if (!product.inStock || !variantAvailable || adding) return
 
     setAdding(true)
-    addToCart({
-      id:
-        (product.id || product._id || '') +
-        (primaryVariant?.label ? `-${primaryVariant.label}` : ''),
-      name: product.name,
-      price: displayPrice,
-      image: product.image || '/fallback.png',
-      quantity: 1,
-      unitLabel: displayUnitLabel,
-      variantLabel: primaryVariant?.label,
-    })
+    addToCart(
+      createCartItem({
+        productId: product.id || product._id || '',
+        name: product.name,
+        price: displayPrice,
+        image: product.image || PRODUCT_FALLBACK_IMAGE,
+        quantity: 1,
+        unitLabel: displayUnitLabel,
+        variantLabel: primaryVariant?.label,
+        variants: product.variants,
+      }),
+    )
 
     setTimeout(() => setAdding(false), 1200)
   }

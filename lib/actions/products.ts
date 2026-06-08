@@ -36,7 +36,9 @@ export async function getProducts(
 ): Promise<PaginatedResponse<any>> {
   const { category, searchQuery, featured, inStock = true, pagination } = options;
   const page = pagination?.page || 1;
-  const limit = Math.min(pagination?.limit || 20, 100); // Max 100 per page
+  // Paginated API calls are capped at 100 per page; use fetchAllProductPages()
+  // when a caller needs the full catalog (e.g. /products PLP client-side filters).
+  const limit = Math.min(pagination?.limit || 20, 100);
   const skip = (page - 1) * limit;
   
   await connectToDatabase();
@@ -132,15 +134,41 @@ export async function getProducts(
   return result;
 }
 
-// Get all products (backward compatibility - returns first page)
+const MAX_PRODUCTS_PAGE_SIZE = 100;
+
+/** Walk every page so PLP/search callers never silently miss products beyond page 1. */
+async function fetchAllProductPages(
+  options: {
+    category?: string;
+    searchQuery?: string;
+    featured?: boolean;
+    inStock?: boolean;
+  } = {},
+) {
+  const allProducts: Awaited<ReturnType<typeof getProducts>>['data'] = [];
+  let page = 1;
+
+  while (true) {
+    const result = await getProducts({
+      ...options,
+      pagination: { page, limit: MAX_PRODUCTS_PAGE_SIZE },
+    });
+    allProducts.push(...result.data);
+    if (!result.pagination.hasMore) {
+      return allProducts;
+    }
+    page += 1;
+  }
+}
+
+// Full catalog for listing pages that filter/sort client-side (not a single page slice).
 export async function getAllProducts(options: {
   category?: string;
   searchQuery?: string;
   featured?: boolean;
   inStock?: boolean;
 } = {}) {
-  const result = await getProducts({ ...options, pagination: { page: 1, limit: 1000 } });
-  return result.data;
+  return fetchAllProductPages(options);
 }
 
 // Get product by slug with caching
@@ -207,10 +235,9 @@ export async function getFeaturedProducts() {
   return result.data;
 }
 
-// Get products by category
+// Get products by category (full category catalog, not first page only)
 export async function getProductsByCategory(category: string) {
-  const result = await getProducts({ category, pagination: { page: 1, limit: 100 } });
-  return result.data;
+  return fetchAllProductPages({ category });
 }
 
 export type CategoryStatsMap = Record<

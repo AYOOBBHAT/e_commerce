@@ -14,6 +14,8 @@ import {
   getStarString,
 } from '@/lib/product-display'
 import { PDP_TRUST_STRIP } from '@/lib/trust-content'
+import { createCartItem } from '@/lib/cart/identity'
+import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 type Variant = {
@@ -79,16 +81,17 @@ export default function ProductBuyBox({ product }: ProductBuyBoxProps) {
   })
   const savingsMeta = formatProductSavings(price, comparePrice)
 
-  const buildCartItem = () => ({
-    id:
-      product._id + (activeVariant?.label ? `-${activeVariant.label}` : ''),
-    name: product.name,
-    price,
-    quantity,
-    image: product.images?.[0] || '/fallback.png',
-    unitLabel,
-    variantLabel: activeVariant?.label,
-  })
+  const buildCartItem = () =>
+    createCartItem({
+      productId: product._id,
+      name: product.name,
+      price,
+      quantity,
+      image: product.images?.[0] || PRODUCT_FALLBACK_IMAGE,
+      unitLabel,
+      variantLabel: activeVariant?.label,
+      variants: product.variants,
+    })
 
   const handleAddToCart = () => {
     if (!isAvailable || adding) return

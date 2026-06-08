@@ -63,7 +63,20 @@ export async function POST(request: NextRequest) {
     if (!resolvedState) resolvedState = 'PENDING';
 
     // Use shared finalizer — Cashfree order_id is expected to be our merchant order id when creating the order
-    await finalizeOrder({ provider: 'cashfree', merchantOrderId: String(orderId), txId: String(paymentId || ''), state: resolvedState, providerResponse: body });
+    const result = await finalizeOrder({
+      provider: 'cashfree',
+      merchantOrderId: String(orderId),
+      txId: String(paymentId || ''),
+      state: resolvedState,
+      providerResponse: body,
+    });
+
+    if (!result.ok && result.inventoryError) {
+      console.error('[cashfree][callback] inventory finalize failed', {
+        orderId,
+        inventoryError: result.inventoryError,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

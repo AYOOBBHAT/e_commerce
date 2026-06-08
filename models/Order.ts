@@ -7,6 +7,7 @@ interface IOrderItem {
   quantity: number;
   price: number;
   image?: string;
+  variantLabel?: string;
 }
 
 interface IPaymentInfo {
@@ -16,6 +17,7 @@ interface IPaymentInfo {
 }
 
 export interface IOrder extends Document {
+  orderId?: string;
   user?: mongoose.Types.ObjectId;
   orderItems: IOrderItem[];
   // Guest contact info
@@ -32,6 +34,9 @@ export interface IOrder extends Document {
   paidAt?: Date;
   orderNumber?: string;
   inventoryAdjusted?: boolean;
+  inventoryFinalizing?: boolean;
+  inventoryReservedAt?: Date;
+  inventoryFailureReason?: string;
   finalSnapshot?: any;
   isProductionTest?: boolean;
   createdAt: Date;
@@ -40,6 +45,7 @@ export interface IOrder extends Document {
 
 const orderSchema = new Schema<IOrder>(
   {
+    orderId: { type: String, unique: true, sparse: true, index: true },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
     orderItems: [
       {
@@ -48,6 +54,7 @@ const orderSchema = new Schema<IOrder>(
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
         image: { type: String },
+        variantLabel: { type: String },
       },
     ],
     shippingAddress: { type: Schema.Types.Mixed, required: true },
@@ -61,6 +68,9 @@ const orderSchema = new Schema<IOrder>(
     paidAt: { type: Date },
     orderNumber: { type: String },
     inventoryAdjusted: { type: Boolean, default: false },
+    inventoryFinalizing: { type: Boolean, default: false },
+    inventoryReservedAt: { type: Date },
+    inventoryFailureReason: { type: String },
     finalSnapshot: { type: Object },
     isProductionTest: { type: Boolean, default: false },
     // Guest customer contact information (if user is not logged in)

@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/components/CartProvider'
 import { useRouter } from 'next/navigation'
@@ -51,7 +51,8 @@ function getCtaLabel(paymentMethod: string, loading: boolean) {
 }
 
 export default function CheckoutPage() {
-  const { cart, clearCart } = useCart()
+  const { cart, clearCart, syncCart, checkoutBlocked, cartReady, removedItemsNotice } =
+    useCart()
   const router = useRouter()
 
   const [activePaymentMethods, setActivePaymentMethods] =
@@ -71,9 +72,57 @@ export default function CheckoutPage() {
   const [phonepeLoading, setPhonepeLoading] = useState(false)
   const [cashfreeLoading, setCashfreeLoading] = useState(false)
 
+  const idempotencyKeyRef = useRef<string | null>(null)
+  const submitInFlightRef = useRef(false)
+
+  const getIdempotencyKey = useCallback(() => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    }
+    return idempotencyKeyRef.current
+  }, [])
+
+  const resetCheckoutSession = useCallback(() => {
+    idempotencyKeyRef.current = null
+    submitInFlightRef.current = false
+  }, [])
+
+  const beginSubmit = useCallback(() => {
+    if (submitInFlightRef.current) return false
+    submitInFlightRef.current = true
+    return true
+  }, [])
+
+  const endSubmit = useCallback(() => {
+    submitInFlightRef.current = false
+  }, [])
+
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const isProcessing =
     isLoading || razorpayLoading || phonepeLoading || cashfreeLoading
+  const checkoutDisabled = checkoutBlocked || !isCheckoutFormComplete(form)
+
+  const ensureCheckoutReady = useCallback(async (): Promise<number | null> => {
+    const result = await syncCart()
+    if (!result || result.checkoutBlocked || !result.items.length) {
+      alert(
+        result?.globalMessage ||
+          'One or more items in your cart are unavailable. Please update your cart.',
+      )
+      router.push('/cart')
+      return null
+    }
+    return result.subtotal
+  }, [router, syncCart])
+
+  useEffect(() => {
+    if (cartReady && cart.length) {
+      void syncCart()
+    }
+  }, [cartReady, cart.length, syncCart])
 
   useEffect(() => {
     const fetchPaymentMethods = async () => {
@@ -112,28 +161,49 @@ export default function CheckoutPage() {
       phone: form.phone,
       address: buildShippingAddress(form),
       paymentMethod,
-      items: cart,
+      idempotencyKey: getIdempotencyKey(),
+      items: cart.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        variantLabel: item.variantLabel,
+        quantity: item.quantity,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        id: item.id,
+      })),
       total: calculatedTotal,
     }),
-    [form, cart],
+    [form, cart, getIdempotencyKey],
   )
 
   const handlePhonePePayment = async () => {
+    if (!beginSubmit()) return
     if (!activePaymentMethods.phonepe) {
+      endSubmit()
       alert('UPI payment is currently disabled. Please select another method.')
       return
     }
     if (!isCheckoutFormComplete(form)) {
+      endSubmit()
       alert('Please fill in all required fields before proceeding.')
       return
     }
     if (!total || total <= 0) {
+      endSubmit()
       alert('Invalid cart total.')
+      return
+    }
+
+    const validatedTotal = await ensureCheckoutReady()
+    if (validatedTotal == null) {
+      endSubmit()
       return
     }
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     if (!origin) {
+      endSubmit()
       alert('Unable to determine website URL. Please refresh and try again.')
       return
     }
@@ -143,18 +213,31 @@ export default function CheckoutPage() {
       const createRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(getOrderPayload('phonepe', total)),
+        body: JSON.stringify(getOrderPayload('phonepe', validatedTotal)),
       })
       const created = await createRes.json()
       if (!createRes.ok || !created?.id) {
         throw new Error(created?.error || 'Failed to create order')
       }
 
+      if (created.fromCache) {
+        const statusRes = await fetch(`/api/orders/public/${created.id}`)
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData?.paymentInfo?.status === 'completed') {
+            clearCart()
+            resetCheckoutSession()
+            router.push(`/order-success?orderId=${created.id}`)
+            return
+          }
+        }
+      }
+
       const shouldIncludeRedirect =
         origin.startsWith('https://') ||
         process.env.NEXT_PUBLIC_ALLOW_HTTP_REDIRECT === 'true'
       const requestBody: Record<string, unknown> = {
-        amount: total,
+        amount: validatedTotal,
         orderId: created.id,
       }
       if (shouldIncludeRedirect) {
@@ -183,16 +266,26 @@ export default function CheckoutPage() {
       alert(err instanceof Error ? err.message : 'UPI payment failed.')
     } finally {
       setPhonepeLoading(false)
+      endSubmit()
     }
   }
 
   const handleSubmit = async () => {
+    if (!beginSubmit()) return
     if (!activePaymentMethods[form.paymentMethod]) {
+      endSubmit()
       alert('Selected payment method is disabled.')
       return
     }
     if (!isCheckoutFormComplete(form)) {
+      endSubmit()
       alert('Please complete all shipping fields.')
+      return
+    }
+
+    const validatedTotal = await ensureCheckoutReady()
+    if (validatedTotal == null) {
+      endSubmit()
       return
     }
 
@@ -201,7 +294,7 @@ export default function CheckoutPage() {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(getOrderPayload(form.paymentMethod, total)),
+        body: JSON.stringify(getOrderPayload(form.paymentMethod, validatedTotal)),
       })
 
       if (!res.ok) {
@@ -211,21 +304,32 @@ export default function CheckoutPage() {
 
       const result = await res.json()
       clearCart()
-      router.push(`/order-success?orderId=${result.orderId}`)
+      resetCheckoutSession()
+      router.push(`/order-success?orderId=${result.id}`)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Order failed. Please try again.')
     } finally {
       setIsLoading(false)
+      endSubmit()
     }
   }
 
   const handleRazorpayPayment = async () => {
+    if (!beginSubmit()) return
     if (!activePaymentMethods.razorpay) {
+      endSubmit()
       alert('Razorpay is currently disabled.')
       return
     }
     if (!isCheckoutFormComplete(form) || !cart.length || total <= 0) {
+      endSubmit()
       alert('Please complete all fields and ensure your cart is valid.')
+      return
+    }
+
+    const validatedTotal = await ensureCheckoutReady()
+    if (validatedTotal == null) {
+      endSubmit()
       return
     }
 
@@ -234,18 +338,31 @@ export default function CheckoutPage() {
       const createRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(getOrderPayload('razorpay', total)),
+        body: JSON.stringify(getOrderPayload('razorpay', validatedTotal)),
       })
       const created = await createRes.json()
       if (!createRes.ok || !created?.id) {
         throw new Error(created?.error || 'Failed to create order')
       }
 
+      if (created.fromCache) {
+        const statusRes = await fetch(`/api/orders/public/${created.id}`)
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData?.paymentInfo?.status === 'completed') {
+            clearCart()
+            resetCheckoutSession()
+            router.push(`/order-success?orderId=${created.id}`)
+            return
+          }
+        }
+      }
+
       const res = await fetch('/api/payments/razorpay/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: total,
+          amount: validatedTotal,
           currency: 'INR',
           receipt: created.id,
         }),
@@ -285,9 +402,18 @@ export default function CheckoutPage() {
                 razorpaySignature: response.razorpay_signature,
               }),
             })
-            if (!verifyRes.ok) throw new Error('Verification failed')
+            if (!verifyRes.ok) {
+              const data = await verifyRes.json().catch(() => ({}))
+              throw new Error(
+                data.error ||
+                  (verifyRes.status === 409
+                    ? 'Item is no longer in stock. If payment was deducted, contact support.'
+                    : 'Verification failed'),
+              )
+            }
             clearCart()
-            router.push(`/order-success?orderId=${created.orderId}`)
+            resetCheckoutSession()
+            router.push(`/order-success?orderId=${created.id}`)
           } catch {
             alert(
               'Payment verification failed. Contact support if amount was deducted.',
@@ -306,16 +432,26 @@ export default function CheckoutPage() {
       alert('Razorpay payment failed. Please try again.')
     } finally {
       setRazorpayLoading(false)
+      endSubmit()
     }
   }
 
   const handleCashfreePayment = async () => {
+    if (!beginSubmit()) return
     if (!activePaymentMethods.cashfree) {
+      endSubmit()
       alert('Cashfree is currently disabled.')
       return
     }
     if (!isCheckoutFormComplete(form)) {
+      endSubmit()
       alert('Please complete all shipping fields.')
+      return
+    }
+
+    const validatedTotal = await ensureCheckoutReady()
+    if (validatedTotal == null) {
+      endSubmit()
       return
     }
 
@@ -324,18 +460,31 @@ export default function CheckoutPage() {
       const createRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(getOrderPayload('cashfree', total)),
+        body: JSON.stringify(getOrderPayload('cashfree', validatedTotal)),
       })
       const created = await createRes.json()
       if (!createRes.ok || !created?.id) {
         throw new Error(created?.error || 'Failed to create order')
       }
 
+      if (created.fromCache) {
+        const statusRes = await fetch(`/api/orders/public/${created.id}`)
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData?.paymentInfo?.status === 'completed') {
+            clearCart()
+            resetCheckoutSession()
+            router.push(`/order-success?orderId=${created.id}`)
+            return
+          }
+        }
+      }
+
       const res = await fetch('/api/payments/cashfree', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: total,
+          amount: validatedTotal,
           orderId: created.id,
           redirectUrl: `${window.location.origin}/order-processing?orderId=${created.id}`,
           customerDetails: {
@@ -361,6 +510,7 @@ export default function CheckoutPage() {
       alert(err instanceof Error ? err.message : 'Cashfree payment failed.')
     } finally {
       setCashfreeLoading(false)
+      endSubmit()
     }
   }
 
@@ -372,6 +522,14 @@ export default function CheckoutPage() {
   }
 
   const ctaLabel = getCtaLabel(form.paymentMethod, isProcessing)
+
+  if (!cartReady) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#FAF7F2] px-4">
+        <p className="text-sm text-stone-600">Loading checkout…</p>
+      </div>
+    )
+  }
 
   if (!cart.length) {
     return (
@@ -399,6 +557,16 @@ export default function CheckoutPage() {
       <div className="container mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <CheckoutHeader />
         <CheckoutTrustStrip />
+
+        {(removedItemsNotice || checkoutBlocked) && (
+          <p
+            className="mt-6 rounded-2xl border border-stone-200/80 bg-white px-4 py-3 text-sm text-stone-600"
+            role="status"
+          >
+            {removedItemsNotice ||
+              'One or more items are unavailable. Return to your cart to resolve.'}
+          </p>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
@@ -548,7 +716,7 @@ export default function CheckoutPage() {
 
               <Button
                 type="submit"
-                disabled={isProcessing}
+                disabled={isProcessing || checkoutDisabled}
                 className="hidden h-12 w-full rounded-full bg-stone-900 text-base font-semibold text-white hover:bg-stone-800 lg:inline-flex"
               >
                 {isProcessing ? (
@@ -578,7 +746,7 @@ export default function CheckoutPage() {
         total={total}
         ctaLabel={ctaLabel}
         isLoading={isProcessing}
-        disabled={!isCheckoutFormComplete(form)}
+        disabled={checkoutDisabled}
         onSubmit={handlePlaceOrder}
       />
     </div>

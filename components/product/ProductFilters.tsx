@@ -9,9 +9,9 @@ import {
 } from '@/components/ui/select';
 
 interface ProductFiltersProps {
-  availabilityFilter: 'all' | 'in' | 'out';
+  availabilityFilter: 'all' | 'in';
   sortOption: 'newest' | 'priceLow' | 'priceHigh';
-  onAvailabilityChange: (value: 'all' | 'in' | 'out') => void;
+  onAvailabilityChange: (value: 'all' | 'in') => void;
   onSortChange: (value: 'newest' | 'priceLow' | 'priceHigh') => void;
   productCount: number;
 }
@@ -55,7 +55,6 @@ export default function ProductFilters({
               <SelectContent className="border-stone-200 bg-white">
                 <SelectItem value="all">All products</SelectItem>
                 <SelectItem value="in">In stock</SelectItem>
-                <SelectItem value="out">Out of stock</SelectItem>
               </SelectContent>
             </Select>
           </div>

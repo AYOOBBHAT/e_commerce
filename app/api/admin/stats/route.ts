@@ -14,6 +14,50 @@ const mapStatusToBucket = (status?: string) => {
   return 'pending';
 };
 
+type AnalyticsOrder = {
+  status?: string;
+  isProductionTest?: boolean;
+  paymentInfo?: { method?: string; status?: string };
+  orderItems?: unknown[];
+  items?: unknown[];
+  totalPrice?: number;
+  total?: number;
+  createdAt?: Date | string;
+};
+
+/**
+ * Shared gate for revenue, units sold, and sales breakdowns.
+ *
+ * Orders By Status uses the full order set so admins still see cancelled,
+ * failed, and abandoned checkouts. Sales metrics must not count those because
+ * they would inflate revenue and units with orders that never completed as
+ * valid business (cancelled, payment failed, unpaid online, or prod-test).
+ */
+const isCountableForAnalytics = (order: AnalyticsOrder): boolean => {
+  const status = (order.status || '').toLowerCase();
+  if (status === 'cancelled' || status === 'canceled') return false;
+  if (order.isProductionTest === true) return false;
+
+  const paymentStatus = (order.paymentInfo?.status || '').toLowerCase();
+  if (paymentStatus === 'failed') return false;
+
+  const method = (order.paymentInfo?.method || '').toLowerCase();
+  // COD is valid before payment is collected at delivery.
+  if (method === 'cod') return true;
+
+  // Online gateways only count after payment completes.
+  return paymentStatus === 'completed';
+};
+
+const getOrderLineItems = (order: AnalyticsOrder) =>
+  Array.isArray(order.orderItems) && order.orderItems.length
+    ? order.orderItems
+    : Array.isArray(order.items) && order.items.length
+      ? order.items
+      : [];
+
+const getOrderTotal = (order: AnalyticsOrder) => order.totalPrice || order.total || 0;
+
 export async function GET() {
   try {
     const session = await getServerSession();
@@ -33,8 +77,14 @@ export async function GET() {
     ]);
 
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce(
-      (acc, order: any) => acc + (order.totalPrice || order.total || 0),
+
+    // Revenue, units, and sales charts share one filtered subset of orders.
+    const analyticsOrders = orders.filter((order: AnalyticsOrder) =>
+      isCountableForAnalytics(order)
+    );
+
+    const totalRevenue = analyticsOrders.reduce(
+      (acc, order: AnalyticsOrder) => acc + getOrderTotal(order),
       0
     );
 
@@ -45,15 +95,8 @@ export async function GET() {
       price: number;
     }[] = [];
 
-    orders.forEach((order: any) => {
-      const lineItems =
-        Array.isArray(order.orderItems) && order.orderItems.length
-          ? order.orderItems
-          : Array.isArray(order.items)
-          ? order.items
-          : [];
-
-      lineItems.forEach((item: any) => {
+    analyticsOrders.forEach((order: AnalyticsOrder) => {
+      getOrderLineItems(order).forEach((item: any) => {
         orderLineItems.push({
           productId: item.product ? item.product.toString() : undefined,
           name: item.name || 'Unknown product',
@@ -195,14 +238,14 @@ export async function GET() {
     });
 
     const monthlySalesMap = new Map<string, { name: string; sales: number }>();
-    orders.forEach((order: any) => {
+    analyticsOrders.forEach((order: AnalyticsOrder) => {
       if (!order.createdAt) return;
       const date = new Date(order.createdAt);
       if (Number.isNaN(date.getTime())) return;
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
       const existing = monthlySalesMap.get(key) || { name: label, sales: 0 };
-      existing.sales += order.totalPrice || order.total || 0;
+      existing.sales += getOrderTotal(order);
       monthlySalesMap.set(key, existing);
     });
     const salesData = Array.from(monthlySalesMap.entries())

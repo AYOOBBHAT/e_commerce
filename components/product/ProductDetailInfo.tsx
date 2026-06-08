@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCart } from '@/components/CartProvider';
+import { createCartItem } from '@/lib/cart/identity';
+import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants';
 
 type Variant = {
   label: string;
@@ -53,15 +55,18 @@ export default function ProductDetailInfo({ product }: ProductDetailInfoProps) {
 
   const handleAddToCart = () => {
     if (!isAvailable) return;
-    addToCart({
-      id: product._id + (activeVariant?.label ? `-${activeVariant.label}` : ''),
-      name: product.name,
-      price,
-      quantity,
-      image: product.images?.[0] || '/fallback.png',
-      unitLabel: unitLabel,
-      variantLabel: activeVariant?.label,
-    });
+    addToCart(
+      createCartItem({
+        productId: product._id,
+        name: product.name,
+        price,
+        quantity,
+        image: product.images?.[0] || PRODUCT_FALLBACK_IMAGE,
+        unitLabel,
+        variantLabel: activeVariant?.label,
+        variants: product.variants,
+      }),
+    );
     setQuantity(1);
   };
 

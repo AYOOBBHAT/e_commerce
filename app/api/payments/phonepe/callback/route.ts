@@ -217,7 +217,19 @@ export async function POST(request: NextRequest) {
     // Finalize or update order based on the resolved state
     if (orderId) {
       try {
-        await finalizePaymentOrder({ provider: 'phonepe', merchantOrderId: String(orderId), txId: String(resolvedTransactionId || ''), state, providerResponse: statusResponse });
+        const result = await finalizePaymentOrder({
+          provider: 'phonepe',
+          merchantOrderId: String(orderId),
+          txId: String(resolvedTransactionId || ''),
+          state,
+          providerResponse: statusResponse,
+        });
+        if (!result.ok && result.inventoryError) {
+          console.error('[payments][phonepe][callback] inventory finalize failed', {
+            orderId,
+            inventoryError: result.inventoryError,
+          });
+        }
       } catch (err) {
         console.error('[payments][phonepe][callback] finalizePaymentOrder error', err);
       }

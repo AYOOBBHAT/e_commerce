@@ -116,9 +116,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/api/admin/products')) {
-    if (request.method === 'GET') {
-      return continueWithOptionalRefresh(NextResponse.next(), session);
-    }
     if (!isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

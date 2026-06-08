@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
@@ -77,6 +77,18 @@ export default function Header({ user, navCategories }: HeaderProps) {
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const [cartBadgePulse, setCartBadgePulse] = useState(false);
+  const prevCartCountRef = useRef(cartCount);
+
+  useEffect(() => {
+    if (cartCount > prevCartCountRef.current) {
+      setCartBadgePulse(true);
+      const timer = window.setTimeout(() => setCartBadgePulse(false), 600);
+      prevCartCountRef.current = cartCount;
+      return () => window.clearTimeout(timer);
+    }
+    prevCartCountRef.current = cartCount;
+  }, [cartCount]);
 
   const desktopNavLink = (isActive: boolean) =>
     cn(
@@ -197,7 +209,10 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {cartCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#B87333] text-[10px] font-semibold text-white shadow-sm shadow-[#B87333]/30 sm:text-xs"
+                  className={cn(
+                    'absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#B87333] text-[10px] font-semibold text-white shadow-sm shadow-[#B87333]/30 sm:text-xs',
+                    cartBadgePulse && 'motion-safe:scale-125 motion-safe:transition-transform motion-safe:duration-300',
+                  )}
                   aria-label={`${cartCount} items in cart`}
                 >
                   {cartCount}

@@ -12,7 +12,7 @@ interface ProductListClientProps {
 }
 
 export default function ProductListClient({ products }: ProductListClientProps) {
-  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'in' | 'out'>('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'in'>('all');
   const [sortOption, setSortOption] = useState<'newest' | 'priceLow' | 'priceHigh'>('newest');
 
   const displayedProducts = useMemo(() => {
@@ -23,8 +23,6 @@ export default function ProductListClient({ products }: ProductListClientProps) 
     
     if (availabilityFilter === 'in') {
       filtered = filtered.filter((p) => p.inStock);
-    } else if (availabilityFilter === 'out') {
-      filtered = filtered.filter((p) => !p.inStock);
     }
 
     switch (sortOption) {

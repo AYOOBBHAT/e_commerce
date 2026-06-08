@@ -3,17 +3,54 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  Mail,
+  MessageCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useSession } from '@/components/SessionProvider'
 import { SITE_NAME } from '@/lib/constants'
 import CheckoutTrustStrip from '@/components/checkout/CheckoutTrustStrip'
+import {
+  ORDER_PAYMENT_STATUS,
+  ORDER_SUCCESS_SUPPORT,
+  ORDER_WHAT_HAPPENS_NEXT,
+  buildEmailSupportUrl,
+  buildWhatsAppSupportUrl,
+  formatOrderPaymentMethod,
+  resolveOrderPaymentDisplay,
+} from '@/lib/order-success-content'
+
+type PublicOrder = {
+  orderId?: string
+  id?: string
+  customer?: { name?: string; email?: string }
+  hasAccount?: boolean
+  shippingAddress?: string | null
+  paymentMethod?: string
+  paymentInfo?: { status?: string; method?: string }
+  orderItems?: Array<{
+    name?: string
+    quantity?: number
+    price?: number
+    image?: string
+    variantLabel?: string
+    product?: string
+  }>
+  total?: number
+  totalPrice?: number
+}
 
 export default function OrderSuccessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
-  const [order, setOrder] = useState<any>(null)
+  const { user, isLoading: sessionLoading } = useSession()
+  const [order, setOrder] = useState<PublicOrder | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -36,8 +73,37 @@ export default function OrderSuccessPage() {
     void fetchOrder()
   }, [orderId])
 
-  const items = order?.items || order?.orderItems || []
+  const items = order?.orderItems || []
   const total = order?.total ?? order?.totalPrice
+  const displayOrderId = order?.orderId || orderId || ''
+  const paymentMethod = order?.paymentMethod || order?.paymentInfo?.method
+  const paymentStatus = order?.paymentInfo?.status
+
+  const paymentDisplay = useMemo(
+    () => resolveOrderPaymentDisplay(paymentMethod, paymentStatus),
+    [paymentMethod, paymentStatus],
+  )
+  const statusCopy =
+    loading || !order
+      ? {
+          headline: 'Order confirmed',
+          badge: '',
+          message: `Thank you for choosing ${SITE_NAME}. Your order details are loading below.`,
+        }
+      : ORDER_PAYMENT_STATUS[paymentDisplay]
+
+  const customerName = order?.customer?.name
+  const customerEmail = order?.customer?.email
+  const isLoggedInViewer = Boolean(user?.id)
+  const showViewOrders = isLoggedInViewer
+
+  const whatsAppUrl = displayOrderId
+    ? buildWhatsAppSupportUrl(displayOrderId)
+    : buildWhatsAppSupportUrl('')
+
+  const emailSupportUrl = displayOrderId
+    ? buildEmailSupportUrl(displayOrderId)
+    : `mailto:${ORDER_SUCCESS_SUPPORT.email}`
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] px-4 py-10 sm:py-14">
@@ -51,17 +117,26 @@ export default function OrderSuccessPage() {
             {SITE_NAME}
           </p>
           <h1 className="mt-1.5 text-2xl font-bold text-stone-900 sm:text-3xl">
-            Order confirmed
+            {statusCopy.headline}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-stone-600">
-            Thank you for choosing {SITE_NAME}. Your Kashmir staples are being
-            prepared with care.
+          <p className="mt-3 text-sm leading-relaxed text-stone-600">
+            {statusCopy.message}
           </p>
-
-          {orderId && (
-            <p className="mt-4 rounded-xl bg-[#FAF7F2] px-4 py-2.5 font-mono text-sm text-stone-700">
-              {orderId}
+          {statusCopy.badge ? (
+            <p className="mt-3 inline-flex rounded-full bg-[#FAF7F2] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#B87333]">
+              {statusCopy.badge}
             </p>
+          ) : null}
+
+          {displayOrderId && (
+            <div className="mt-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+                Order reference
+              </p>
+              <p className="mt-1 rounded-xl bg-[#FAF7F2] px-4 py-2.5 font-mono text-sm text-stone-700">
+                {displayOrderId}
+              </p>
+            </div>
           )}
         </div>
 
@@ -77,21 +152,37 @@ export default function OrderSuccessPage() {
                 Order summary
               </h2>
               <dl className="mt-4 space-y-2 text-sm text-stone-600">
+                {customerName && (
+                  <div className="flex justify-between gap-4">
+                    <dt>Name</dt>
+                    <dd className="text-right font-medium text-stone-900">
+                      {customerName}
+                    </dd>
+                  </div>
+                )}
+                {order.shippingAddress && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="shrink-0">Delivery to</dt>
+                    <dd className="text-right font-medium text-stone-900">
+                      {order.shippingAddress}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between gap-4">
-                  <dt>Name</dt>
+                  <dt>Payment</dt>
                   <dd className="text-right font-medium text-stone-900">
-                    {order.user?.name || order.customer?.name || 'Guest'}
+                    {formatOrderPaymentMethod(paymentMethod)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt>Payment</dt>
-                  <dd className="text-right font-medium capitalize text-stone-900">
-                    {order.paymentMethod || order.paymentInfo?.method || '—'}
+                  <dt>Status</dt>
+                  <dd className="text-right font-medium text-stone-900">
+                    {statusCopy.badge}
                   </dd>
                 </div>
                 {total != null && (
                   <div className="flex justify-between gap-4 border-t border-stone-100 pt-3">
-                    <dt className="font-semibold text-stone-900">Total</dt>
+                    <dt className="font-semibold text-stone-900">Item total</dt>
                     <dd className="text-lg font-bold text-stone-900">
                       ₹{Number(total).toLocaleString('en-IN')}
                     </dd>
@@ -101,7 +192,7 @@ export default function OrderSuccessPage() {
 
               {items.length > 0 && (
                 <ul className="mt-5 space-y-3 border-t border-stone-100 pt-4">
-                  {items.map((item: any, idx: number) => (
+                  {items.map((item, idx) => (
                     <li key={item.product || idx} className="flex gap-3">
                       {item.image ? (
                         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#FAF7F2]">
@@ -118,9 +209,14 @@ export default function OrderSuccessPage() {
                         <p className="font-medium text-stone-900">
                           {item.name || 'Item'}
                         </p>
+                        {item.variantLabel && (
+                          <p className="mt-0.5 text-xs text-stone-500">
+                            {item.variantLabel}
+                          </p>
+                        )}
                         <p className="text-stone-500">
                           Qty {item.quantity || 0} · ₹
-                          {Number(item.price || 0).toLocaleString('en-IN')}
+                          {Number(item.price || 0).toLocaleString('en-IN')} each
                         </p>
                       </div>
                     </li>
@@ -135,21 +231,119 @@ export default function OrderSuccessPage() {
           )}
         </div>
 
+        <div className="mt-6 rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-stone-500">
+            What happens next
+          </h2>
+          <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-stone-600">
+            {ORDER_WHAT_HAPPENS_NEXT.map((line) => (
+              <li key={line} className="flex gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#B87333]" aria-hidden />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs text-stone-500">
+            Full details in our{' '}
+            <Link
+              href="/quick-links/shipping-returns"
+              className="font-semibold text-[#B87333] hover:text-stone-900"
+            >
+              Shipping &amp; Returns policy
+            </Link>
+            .
+          </p>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-stone-500">
+            Need help?
+          </h2>
+          <p className="mt-2 text-sm text-stone-600">
+            Our team can help with order {displayOrderId ? (
+              <span className="font-mono text-stone-800">{displayOrderId}</span>
+            ) : (
+              'reference'
+            )}
+            .
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 flex-1 rounded-full border-stone-300 bg-white text-stone-900 hover:bg-[#FAF7F2]"
+            >
+              <a
+                href={whatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="h-4 w-4 text-[#B87333]" aria-hidden />
+                WhatsApp support
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 flex-1 rounded-full border-stone-300 bg-white text-stone-900 hover:bg-[#FAF7F2]"
+            >
+              <a
+                href={emailSupportUrl}
+                className="inline-flex items-center justify-center gap-2"
+              >
+                <Mail className="h-4 w-4 text-[#B87333]" aria-hidden />
+                Email support
+              </a>
+            </Button>
+          </div>
+        </div>
+
         <div className="mt-6">
           <CheckoutTrustStrip />
         </div>
 
-        <p className="mt-6 text-center text-sm text-stone-600">
-          Confirmation email/SMS on its way. Track status in{' '}
-          <button
-            type="button"
-            onClick={() => router.push('/account/orders')}
-            className="font-semibold text-[#B87333] hover:text-stone-900"
-          >
-            My Orders
-          </button>
-          .
-        </p>
+        {!sessionLoading && (
+          <p className="mt-6 text-center text-sm text-stone-600">
+            {showViewOrders ? (
+              <>
+                Track updates in{' '}
+                <button
+                  type="button"
+                  onClick={() => router.push('/account/orders')}
+                  className="font-semibold text-[#B87333] hover:text-stone-900"
+                >
+                  View Orders
+                </button>
+                .
+              </>
+            ) : (
+              <>
+                <span className="inline-flex items-center justify-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-[#B87333]" aria-hidden />
+                  Check your email
+                </span>
+                {customerEmail ? (
+                  <>
+                    {' '}
+                    at{' '}
+                    <span className="font-medium text-stone-800">
+                      {customerEmail}
+                    </span>
+                  </>
+                ) : null}{' '}
+                for order updates, or{' '}
+                <Link
+                  href="/quick-links/faq"
+                  className="font-semibold text-[#B87333] hover:text-stone-900"
+                >
+                  contact support
+                </Link>
+                .
+              </>
+            )}
+          </p>
+        )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button

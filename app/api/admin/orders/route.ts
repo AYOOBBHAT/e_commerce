@@ -3,6 +3,10 @@ import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import User from '@/models/User';
 import { getServerSession } from '@/lib/auth';
+import {
+  buildAdminOrderSearchFilter,
+  mergeFilters,
+} from '@/lib/orders/admin-search';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,14 +21,13 @@ export async function GET(request: NextRequest) {
     const limit = Math.max(1, parseInt(searchParams.get('limit') || '10', 10));
     const statusFilter = searchParams.get('status');
     const emailFilter = searchParams.get('email');
+    const searchFilter = searchParams.get('search') || searchParams.get('q');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const exportCsv = searchParams.get('export') === 'csv';
 
-    const filter: any = {};
+    let filter: Record<string, unknown> = {};
     if (statusFilter) {
-      // 'pending' status should include both 'pending' and 'processing' orders
-      // since they're grouped together in the dashboard
       if (statusFilter === 'pending') {
         filter.status = { $in: ['pending', 'processing'] };
       } else {
@@ -33,30 +36,38 @@ export async function GET(request: NextRequest) {
     }
     if (dateFrom || dateTo) {
       filter.createdAt = {};
-      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+      if (dateFrom) (filter.createdAt as Record<string, Date>).$gte = new Date(dateFrom);
       if (dateTo) {
-        // include the whole day for dateTo
         const dt = new Date(dateTo);
-        dt.setHours(23,59,59,999);
-        filter.createdAt.$lte = dt;
+        dt.setHours(23, 59, 59, 999);
+        (filter.createdAt as Record<string, Date>).$lte = dt;
       }
     }
 
     if (emailFilter) {
-      // find users matching email (use anchored regex for prefix match which can use index)
       const escaped = emailFilter.replace(/[-\\/\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp('^' + escaped, 'i');
       const users = await User.find({ email: { $regex: regex } }).select('_id');
-      const ids = users.map(u => u._id);
-      // if no users match, ensure no orders returned
-      filter.user = ids.length ? { $in: ids } : { $in: [] };
+      const ids = users.map((u) => u._id);
+      const emailOr = {
+        $or: [
+          { user: ids.length ? { $in: ids } : { $in: [] } },
+          { 'customer.email': { $regex: regex } },
+        ],
+      };
+      filter = mergeFilters(filter, emailOr);
+    }
+
+    if (searchFilter?.trim()) {
+      const searchQuery = await buildAdminOrderSearchFilter(searchFilter);
+      filter = mergeFilters(filter, searchQuery);
     }
 
     // If CSV export requested, return the CSV for all matching orders
     if (exportCsv) {
       // Stream CSV to avoid building it fully in memory for large datasets
       const cursor = Order.find(filter).populate('user', 'name email').sort({ createdAt: -1 }).cursor();
-      const header = ['OrderID', 'UserName', 'UserEmail', 'Date', 'Status', 'Total', 'ItemsCount'];
+      const header = ['OrderID', 'CustomerName', 'CustomerEmail', 'Date', 'Status', 'PaymentMethod', 'PaymentStatus', 'Total', 'ItemsCount'];
       const encoder = new TextEncoder();
 
       let headerSent = false;
@@ -74,14 +85,18 @@ export async function GET(request: NextRequest) {
               return;
             }
             const o: any = doc;
-            const itemsCount = (o.items && o.items.length) || (o.orderItems && o.orderItems.length) || 0;
+            const itemsCount = (o.orderItems && o.orderItems.length) || 0;
+            const customerName = o.user?.name || o.customer?.name || '';
+            const customerEmail = o.user?.email || o.customer?.email || '';
             const row = [
               o.orderId || o._id || '',
-              o.user?.name || '',
-              o.user?.email || '',
+              customerName,
+              customerEmail,
               o.createdAt ? new Date(o.createdAt).toISOString() : '',
               o.status || '',
-              (o.total || o.totalPrice || o.amount || 0).toString(),
+              o.paymentInfo?.method || '',
+              o.paymentInfo?.status || '',
+              (o.totalPrice || o.total || 0).toString(),
               itemsCount.toString(),
             ].map(field => `"${String(field).replace(/"/g,'""')}"`).join(',') + '\n';
             controller.enqueue(encoder.encode(row));

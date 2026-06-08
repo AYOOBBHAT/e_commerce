@@ -6,6 +6,7 @@ import { AlertCircle, X } from 'lucide-react'
 import { analyzeProductImageFile } from '@/lib/analyze-product-image'
 import {
   IMAGE_STATUS_LABELS,
+  isAllowedManualImageStatus,
   syncImageMetaWithUrls,
   type ProductImageMeta,
   type ProductImageStatus,
@@ -114,6 +115,18 @@ export default function ProductImageUploadPanel({
   }
 
   const updateStatus = (url: string, status: ProductImageStatus) => {
+    const current = metaByUrl.get(url)
+    if (
+      current &&
+      (status === 'approved' || status === 'featured_ready') &&
+      !isAllowedManualImageStatus(current, status)
+    ) {
+      setRejections([
+        'Approved and Featured Ready require a fully analyzed image (scores, consistency, and no validation errors). Re-upload the image to run analysis.',
+      ])
+      return
+    }
+
     const nextMeta = imageMeta.map((entry) =>
       entry.url === url ? { ...entry, status } : entry,
     )

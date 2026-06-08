@@ -17,7 +17,6 @@ export default async function Home() {
     const mainMeta = product.imageMeta?.find(
       (entry: { url: string }) => entry.url === mainUrl,
     )
-    if (!product.imageMeta?.length) return true
     return canUseAsFeaturedMainImage(mainMeta)
   });
   const { data: allProducts } = await getProducts();

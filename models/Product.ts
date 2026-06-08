@@ -99,5 +99,8 @@ const productSchema = new Schema<IProduct>(
 
 // Create text index for search
 productSchema.index({ name: 'text', description: 'text', category: 'text' });
+productSchema.index({ category: 1, createdAt: -1 });
+productSchema.index({ featured: 1, inStock: 1 });
+productSchema.index({ quantity: 1 });
 
 export default mongoose.models.Product || mongoose.model<IProduct>('Product', productSchema);
