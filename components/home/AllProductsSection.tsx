@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import ProductCard, { type ProductCardProduct } from '@/components/product/ProductCard'
+import ProductGrid from '@/components/product/ProductGrid'
+import { type ProductCardProduct } from '@/components/product/ProductCard'
 
 interface AllProductsSectionProps {
   products: ProductCardProduct[]
@@ -15,8 +16,8 @@ export default function AllProductsSection({ products }: AllProductsSectionProps
       aria-labelledby="all-products-heading"
     >
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
               Shop Everything
             </p>
@@ -30,9 +31,9 @@ export default function AllProductsSection({ products }: AllProductsSectionProps
 
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[#B87333] hover:text-stone-900 sm:self-auto"
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#B87333] hover:text-stone-900"
           >
-            View Store
+            View All
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
@@ -40,13 +41,7 @@ export default function AllProductsSection({ products }: AllProductsSectionProps
         {!displayProducts.length ? (
           <p className="py-8 text-center text-sm text-stone-500">No products found.</p>
         ) : (
-          <ul className="grid list-none grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-            {displayProducts.map((product, index) => (
-              <li key={product._id || product.id || product.slug} className="min-w-0">
-                <ProductCard product={product} priority={index < 2} />
-              </li>
-            ))}
-          </ul>
+          <ProductGrid products={displayProducts} priorityCount={2} />
         )}
       </div>
     </section>

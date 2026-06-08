@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ProductCollectionCard } from '@/components/product/ProductCollectionCard';
+import ProductGrid from '@/components/product/ProductGrid';
 import { useDebouncedCallback } from 'use-debounce';
 import { useEffect, useState, useTransition } from 'react';
 
@@ -115,28 +115,7 @@ export default function SearchClient({ initialQuery = '', initialResults = [] }:
       ) : displayResults.length === 0 ? (
         <div className="p-6 text-center">No products found for &ldquo;{query}&rdquo;.</div>
       ) : (
-        <>
-          <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
-            {displayResults.map((product) => (
-              <div
-                key={product._id || product.id || product.slug}
-                className="min-w-[75vw] max-w-xs flex-shrink-0"
-              >
-                <ProductCollectionCard product={product} />
-              </div>
-            ))}
-          </div>
-          <div className="hidden sm:block">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
-              {displayResults.map((product) => (
-                <ProductCollectionCard
-                  key={product._id || product.id || product.slug}
-                  product={product}
-                />
-              ))}
-            </div>
-          </div>
-        </>
+        <ProductGrid products={displayResults} ariaLabel="Search results" />
       )}
     </>
   );

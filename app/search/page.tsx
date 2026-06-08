@@ -28,64 +28,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-async function SearchResults({ query, category }: { query: string; category?: string }) {
-  if (!query || query.length < 2) {
-    return (
-      <div className="p-6 text-center text-slate-500">
-        Start typing to search the catalog (minimum 2 characters).
-      </div>
-    );
-  }
-
-  try {
-    const results = await getAllProducts({
-      searchQuery: query,
-      category: category || undefined,
-      inStock: false,
-    });
-
-    if (results.length === 0) {
-      return (
-        <div className="p-6 text-center">
-          No products found for &ldquo;{query}&rdquo;.
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
-          {results.map((product) => (
-            <div
-              key={product._id || product.id || product.slug}
-              className="min-w-[75vw] max-w-xs flex-shrink-0"
-            >
-              {/* ProductCollectionCard will be loaded client-side for interactivity */}
-              <div className="aspect-[4/3] bg-slate-100 animate-pulse rounded-2xl" />
-            </div>
-          ))}
-        </div>
-        <div className="hidden sm:block">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
-            {results.map((product) => (
-              <div
-                key={product._id || product.id || product.slug}
-                className="aspect-[4/3] bg-slate-100 animate-pulse rounded-2xl"
-              />
-            ))}
-          </div>
-        </div>
-      </>
-    );
-  } catch (error) {
-    return (
-      <div className="p-6 text-center text-destructive">
-        Error searching products. Please try again.
-      </div>
-    );
-  }
-}
-
 export default async function SearchPage({ searchParams }: Props) {
   const query = searchParams.q || '';
   const category = searchParams.category;

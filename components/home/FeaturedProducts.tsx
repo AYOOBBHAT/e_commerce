@@ -23,8 +23,8 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
       aria-labelledby="featured-products-heading"
     >
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 sm:mb-10 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
+        <div className="mb-8 flex items-end justify-between gap-4 sm:mb-10">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
               Best Sellers
             </p>
@@ -38,9 +38,9 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
 
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[#B87333] hover:text-stone-900 lg:self-auto"
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#B87333] hover:text-stone-900"
           >
-            View All Products
+            View All
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>

@@ -1,30 +1,33 @@
 import ProductCard, { type ProductCardProduct } from './ProductCard'
+import { cn } from '@/lib/utils'
+
+/** Standard product listing grid — 2-col mobile, up to 4-col desktop */
+export const PLP_GRID_CLASS =
+  'grid list-none grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4'
 
 interface ProductGridProps {
   products: ProductCardProduct[]
-  columns?: 2 | 3 | 4
+  priorityCount?: number
+  ariaLabel?: string
+  className?: string
 }
 
-export default function ProductGrid({ products, columns = 3 }: ProductGridProps) {
-  let gridClass = 'grid-cols-1 sm:grid-cols-2';
-
-  switch (columns) {
-    case 2:
-      gridClass = 'grid-cols-1 sm:grid-cols-2';
-      break;
-    case 3:
-      gridClass = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
-      break;
-    case 4:
-      gridClass = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-      break;
-  }
-
+export default function ProductGrid({
+  products,
+  priorityCount = 4,
+  ariaLabel = 'Products',
+  className,
+}: ProductGridProps) {
   return (
-    <div className={`grid ${gridClass} gap-3 sm:gap-4 lg:gap-5`}>
-      {products.map((product) => (
-        <ProductCard key={product._id || product.id || product.slug} product={product} />
+    <ul className={cn(PLP_GRID_CLASS, className)} aria-label={ariaLabel}>
+      {products.map((product, index) => (
+        <li
+          key={product._id || product.id || product.slug}
+          className="min-w-0"
+        >
+          <ProductCard product={product} priority={index < priorityCount} />
+        </li>
       ))}
-    </div>
-  );
+    </ul>
+  )
 }

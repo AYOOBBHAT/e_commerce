@@ -1,29 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ProductCollectionCard } from '@/components/product/ProductCollectionCard';
+import ProductGrid from '@/components/product/ProductGrid';
+import type { ProductCardProduct } from '@/components/product/ProductCard';
 import ProductFilters from './ProductFilters';
 
-interface Product {
-  _id?: string;
-  id?: string;
-  slug: string;
-  name: string;
-  price: number;
-  comparePrice?: number;
-  unitLabel?: string;
-  variants?: {
-    label: string;
-    price: number;
-    comparePrice?: number;
-    inStock?: boolean;
-  }[];
-  image: string;
-  inStock: boolean;
-  category: string;
-  featured?: boolean;
-  createdAt?: string;
-}
+type Product = ProductCardProduct & { createdAt?: string };
 
 interface ProductListClientProps {
   products: Product[];
@@ -77,31 +59,7 @@ export default function ProductListClient({ products }: ProductListClientProps) 
           No products match the selected filters.
         </div>
       ) : (
-        <>
-          {/* Mobile: scrollable row */}
-          <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
-            {displayedProducts.map((product) => (
-              <div
-                key={product._id || product.id || product.slug}
-                className="min-w-[75vw] max-w-xs flex-shrink-0"
-              >
-                <ProductCollectionCard product={product} />
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop: grid layout with lazy loading */}
-          <div className="hidden sm:block">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
-              {displayedProducts.map((product, index) => (
-                <ProductCollectionCard
-                  key={product._id || product.id || product.slug}
-                  product={product}
-                />
-              ))}
-            </div>
-          </div>
-        </>
+        <ProductGrid products={displayedProducts} />
       )}
     </>
   );

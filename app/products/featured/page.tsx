@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ProductCollectionCard } from "@/components/product/ProductCollectionCard";
+import ProductGrid from "@/components/product/ProductGrid";
 
 export default function FeaturedProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -51,29 +51,7 @@ export default function FeaturedProductsPage() {
           ) : !products.length ? (
             <div className="p-6 text-center">No featured products found.</div>
           ) : (
-            <>
-              <div className="flex sm:hidden gap-4 overflow-x-auto pb-2">
-                {products.map((product) => (
-                  <div
-                    key={product._id || product.id || product.slug}
-                    className="min-w-[75vw] max-w-xs flex-shrink-0"
-                  >
-                    <ProductCollectionCard product={product} />
-                  </div>
-                ))}
-              </div>
-
-              <div className="hidden sm:block">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
-                  {products.map((product) => (
-                    <ProductCollectionCard
-                      key={product._id || product.id || product.slug}
-                      product={product}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
+            <ProductGrid products={products} ariaLabel="Featured products" />
           )}
         </div>
       </section>
