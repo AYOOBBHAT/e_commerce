@@ -64,6 +64,21 @@ export async function decrypt(token: string) {
   }
 }
 
+/** Refresh JWT only when within 24h of expiry — avoids re-signing on every request */
+export function shouldRefreshToken(payload: Record<string, unknown>): boolean {
+  const exp = payload.exp;
+  if (typeof exp !== 'number') return true;
+  const refreshThresholdMs = 24 * 60 * 60 * 1000;
+  return exp * 1000 - Date.now() < refreshThresholdMs;
+}
+
+export async function refreshAuthToken(payload: Record<string, unknown>) {
+  return encrypt({
+    userId: payload.userId,
+    role: payload.role,
+  });
+}
+
 export async function login(userId: string, role: string) {
   const token = await encrypt({ userId, role });
   return token;
@@ -136,12 +151,12 @@ export async function updateSession(request: NextRequest) {
     if (!token) return null;
 
     const verified = await decrypt(token);
-    if (!verified) return null;
+    if (!verified || !shouldRefreshToken(verified as Record<string, unknown>)) {
+      return null;
+    }
 
-    // Refresh the token expiry
-    const newToken = await encrypt(verified);
+    const newToken = await refreshAuthToken(verified as Record<string, unknown>);
     const response = NextResponse.next();
-    // Use helper to set cookie consistently
     setAuthCookie(response, newToken);
 
     return response;
@@ -149,4 +164,17 @@ export async function updateSession(request: NextRequest) {
     console.error('Failed to update session:', error);
     return null;
   }
+}
+
+/**
+ * Attach a refreshed auth cookie to an outgoing middleware response when needed.
+ */
+export async function attachRefreshedSessionCookie(
+  response: NextResponse,
+  session: Record<string, unknown> | null,
+) {
+  if (!session || !shouldRefreshToken(session)) return response;
+  const newToken = await refreshAuthToken(session);
+  setAuthCookie(response, newToken);
+  return response;
 }

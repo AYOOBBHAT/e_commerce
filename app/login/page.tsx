@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ShoppingBag } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -28,12 +28,24 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+function AuthLoadingScreen({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" aria-hidden />
+        <p className="text-sm text-slate-300">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
-  const { refreshSession } = useSession();
-  
+  const { user, isLoading, setUser, refreshSession } = useSession();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,41 +53,67 @@ export default function Login() {
       password: '',
     },
   });
-  
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/');
+    }
+  }, [user, isLoading, router]);
+
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
-    
+    setIsSubmitting(true);
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // include credentials so the browser accepts Set-Cookie from the server
         credentials: 'include',
-        // avoid any cached responses when logging in
         cache: 'no-store',
         body: JSON.stringify(data),
       });
-      
+
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Login failed');
       }
-      
-      toast.success('Login successful!');
-      await refreshSession();
-      router.push('/');
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || 'Something went wrong');
-    } finally {
-      setIsLoading(false);
+
+      if (result.user) {
+        setUser({
+          id: String(result.user.id),
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+        });
+      }
+
+      setIsRedirecting(true);
+      toast.success('Welcome back!');
+      router.replace('/');
+      void refreshSession();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Something went wrong';
+      toast.error(message);
+      setIsSubmitting(false);
     }
   };
-  
-  const content = (
+
+  if (isLoading || user || isRedirecting) {
+    return (
+      <AuthLoadingScreen
+        message={
+          isRedirecting || user
+            ? 'Taking you to the store...'
+            : 'Checking your session...'
+        }
+      />
+    );
+  }
+
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-10">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8 text-center">
@@ -151,9 +189,16 @@ export default function Login() {
               <Button
                 type="submit"
                 className="w-full mt-1 bg-emerald-400 text-slate-950 hover:bg-emerald-300 font-semibold shadow-[0_12px_28px_rgba(16,185,129,0.4)]"
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Signing in...
+                  </span>
+                ) : (
+                  'Sign in'
+                )}
               </Button>
             </form>
           </Form>
@@ -178,6 +223,4 @@ export default function Login() {
       </div>
     </div>
   );
-
-  return content;
 }

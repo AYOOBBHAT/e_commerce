@@ -45,7 +45,7 @@ export default function Header({ user, navCategories }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
   const router = useRouter();
-  const { refreshSession } = useSession();
+  const { setUser } = useSession();
   const { cart } = useCart();
 
   useEffect(() => {
@@ -67,10 +67,8 @@ export default function Header({ user, navCategories }: HeaderProps) {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', cache: 'no-store' });
-      // refresh local session so UI updates immediately
-      await refreshSession();
-      router.push('/');
-      router.refresh();
+      setUser(null);
+      router.replace('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
