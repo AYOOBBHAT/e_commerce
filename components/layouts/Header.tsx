@@ -29,6 +29,7 @@ import { SITE_NAME } from '@/lib/constants';
 import type { NavCategory } from '@/lib/category-types';
 import { useSession } from '../SessionProvider';
 import { useCart } from '../CartProvider';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   user: {
@@ -64,11 +65,33 @@ export default function Header({ user, navCategories }: HeaderProps) {
     }
   };
 
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const desktopNavLink = (isActive: boolean) =>
+    cn(
+      'text-sm font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-[#B87333] after:transition-all hover:after:w-full',
+      isActive
+        ? 'text-[#B87333]'
+        : 'text-stone-700 hover:text-[#B87333]',
+    );
+
+  const mobileNavLink = (isActive: boolean) =>
+    cn(
+      'block rounded-r-lg border-l-4 py-2.5 pl-3 pr-3 text-base font-medium transition-colors',
+      isActive
+        ? 'border-[#B87333] bg-[#FAF7F2] text-stone-900'
+        : 'border-transparent text-stone-700 hover:bg-stone-50',
+    );
+
+  const mobileActionLink =
+    'flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-[#FAF7F2] hover:text-stone-900';
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', cache: 'no-store' });
       setUser(null);
       router.replace('/');
+      setMobileMenuOpen(false);
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -79,7 +102,7 @@ export default function Header({ user, navCategories }: HeaderProps) {
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled || mobileMenuOpen 
-            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200' 
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-stone-200/80' 
             : 'bg-white/90 backdrop-blur-md'
         }`}
       >
@@ -97,22 +120,17 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 priority
               />
             </div>
-            <span className="text-lg sm:text-xl font-bold text-slate-900 truncate">{SITE_NAME}</span>
+            <span className="text-lg sm:text-xl font-bold text-stone-900 truncate">{SITE_NAME}</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
-            <Link 
-              href="/"
-              className={`text-sm font-medium transition-colors hover:text-emerald-600 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full ${
-                pathname === '/' ? 'text-emerald-600' : 'text-slate-700'
-              }`}
-            >
+            <Link href="/" className={desktopNavLink(pathname === '/')}>
               Home
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="link" className="text-slate-700 p-0 h-auto text-sm font-medium hover:text-emerald-600 transition-colors">
+                <Button variant="link" className="h-auto p-0 text-sm font-medium text-stone-700 hover:text-[#B87333] transition-colors">
                   Categories
                 </Button>
               </DropdownMenuTrigger>
@@ -126,11 +144,9 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link 
+            <Link
               href="/products"
-              className={`text-sm font-medium transition-colors hover:text-emerald-600 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full ${
-                pathname.startsWith('/products') ? 'text-emerald-600' : 'text-slate-700'
-              }`}
+              className={desktopNavLink(pathname.startsWith('/products'))}
             >
               All Products
             </Link>
@@ -168,9 +184,12 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 className="relative h-9 w-9 text-slate-900 hover:bg-slate-100 transition-colors"
               >
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                {cart.reduce((sum, item) => sum + item.quantity, 0) > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] sm:text-xs text-white font-medium shadow-sm">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                {cartCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#B87333] text-[10px] font-semibold text-white shadow-sm shadow-[#B87333]/30 sm:text-xs"
+                  aria-label={`${cartCount} items in cart`}
+                >
+                  {cartCount}
                 </span>
                 )}
               </Button>
@@ -221,7 +240,7 @@ export default function Header({ user, navCategories }: HeaderProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}
-                    className="flex items-center text-destructive focus:text-destructive"
+                    className="flex items-center text-stone-600 focus:bg-red-50 focus:text-red-700"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -230,10 +249,10 @@ export default function Header({ user, navCategories }: HeaderProps) {
               </DropdownMenu>
             ) : (
               <div className="hidden sm:flex items-center space-x-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/login">Login</Link>
+                <Button variant="outline" size="sm" className="border-stone-200 text-stone-700 hover:bg-stone-50" asChild>
+                  <Link href="/login">Sign in</Link>
                 </Button>
-                <Button variant="default" size="sm" asChild>
+                <Button size="sm" className="bg-stone-900 text-white hover:bg-stone-800" asChild>
                   <Link href="/register">Register</Link>
                 </Button>
               </div>
@@ -255,116 +274,145 @@ export default function Header({ user, navCategories }: HeaderProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-14 sm:top-16 lg:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-lg">
-          <div className="container mx-auto px-4 sm:px-6 py-6 max-h-[calc(100vh-4rem)] overflow-y-auto">
-          <form onSubmit={handleSearch} className="relative mb-6">
-            <Input
-              type="search"
-              placeholder="Search"
-              className="pl-9 h-11 w-full rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-300 focus:border-slate-300"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-          </form>
-          
-          <nav className="flex flex-col space-y-6">
-            <Link 
-              href="/"
-              className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
-                pathname === '/' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            
-            <div className="space-y-4">
-              <p className="text-base font-semibold text-slate-900">Categories</p>
-              <div className="grid grid-cols-2 gap-2">
-                {navCategories.map((category) => (
-                  <Link
-                    key={category.slug}
-                    href={`/category/${category.slug}`}
-                    className="block text-sm text-muted-foreground hover:text-primary py-2 px-3 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            
-            <Link 
-              href="/products"
-              className={`text-base font-medium py-2 px-3 rounded-lg transition-colors ${
-                pathname.startsWith('/products') ? 'text-emerald-600 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              All Products
-            </Link>
-            
-            <div className="flex space-x-4 pt-4 border-t">
-              <Link 
-                href="/cart"
-                className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
+        <div className="fixed inset-x-0 top-14 z-40 max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-stone-200 bg-[#FAF7F2]/98 backdrop-blur-md shadow-lg sm:top-16 lg:hidden">
+          <div className="container mx-auto px-4 py-5 sm:px-6">
+            <form onSubmit={handleSearch} className="relative mb-5">
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="h-11 w-full rounded-xl border-stone-200 bg-white pl-9 text-stone-900 placeholder:text-stone-400 focus-visible:ring-[#B87333]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-stone-400" aria-hidden />
+            </form>
+
+            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
+              <Link
+                href="/"
+                className={mobileNavLink(pathname === '/')}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+                Home
               </Link>
-            </div>
-            
-            {user ? (
-              <div className="pt-4 border-t space-y-4">
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+
+              <Link
+                href="/products"
+                className={mobileNavLink(pathname.startsWith('/products'))}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                All Products
+              </Link>
+
+              <div className="mt-4 border-t border-stone-200/80 pt-4">
+                <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
+                  Shop by Category
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {navCategories.map((category) => {
+                    const isActive = pathname === `/category/${category.slug}`;
+                    return (
+                      <Link
+                        key={category.slug}
+                        href={`/category/${category.slug}`}
+                        className={cn(
+                          'rounded-lg px-3 py-2.5 text-sm transition-colors',
+                          isActive
+                            ? 'bg-white font-medium text-stone-900 ring-1 ring-[#B87333]/30'
+                            : 'text-stone-600 hover:bg-white/80 hover:text-stone-900',
+                        )}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {category.name}
+                      </Link>
+                    );
+                  })}
                 </div>
-                {user.role === 'admin' && (
-                  <Link 
-                    href="/admin"
-                    className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </Link>
-                )}
-                {/* Profile removed from mobile menu per request */}
-                <Link 
-                  href="/account/orders"
-                  className="flex items-center text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-colors"
+              </div>
+
+              <div className="mt-4 border-t border-stone-200/80 pt-3">
+                <Link
+                  href="/cart"
+                  className={mobileActionLink}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <PackageSearch className="mr-2 h-4 w-4" />
-                  My Orders
+                  <ShoppingCart className="mr-2.5 h-4 w-4 text-[#B87333]" aria-hidden />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#B87333] px-1.5 text-[11px] font-semibold text-white">
+                      {cartCount}
+                    </span>
+                  )}
                 </Link>
-                <Button 
-                  onClick={handleLogout}
-                  variant="destructive" 
-                  className="w-full justify-start mt-4"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </Button>
               </div>
-            ) : (
-              <div className="pt-4 border-t space-y-3">
-                <Button variant="outline" className="w-full h-11" asChild>
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    Login
+
+              {user ? (
+                <div className="mt-4 space-y-1 border-t border-stone-200/80 pt-4">
+                  <div className="mb-3 rounded-xl border border-stone-200/80 bg-white px-4 py-3">
+                    <p className="text-sm font-semibold text-stone-900">{user.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-stone-500">{user.email}</p>
+                  </div>
+
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className={mobileActionLink}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="mr-2.5 h-4 w-4 text-stone-500" aria-hidden />
+                      Admin Dashboard
+                    </Link>
+                  )}
+
+                  <Link
+                    href="/account/orders"
+                    className={mobileActionLink}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <PackageSearch className="mr-2.5 h-4 w-4 text-stone-500" aria-hidden />
+                    My Orders
                   </Link>
-                </Button>
-                <Button variant="default" className="w-full h-11" asChild>
-                  <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                    Register
+
+                  <Link
+                    href="/account/settings"
+                    className={mobileActionLink}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="mr-2.5 h-4 w-4 text-stone-500" aria-hidden />
+                    Settings
                   </Link>
-                </Button>
-              </div>
-            )}
-          </nav>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-2 flex w-full items-center rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <LogOut className="mr-2.5 h-4 w-4" aria-hidden />
+                    Log out
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-2.5 border-t border-stone-200/80 pt-4">
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full rounded-full border-stone-200 text-stone-700 hover:bg-white"
+                    asChild
+                  >
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                      Sign in
+                    </Link>
+                  </Button>
+                  <Button
+                    className="h-11 w-full rounded-full bg-stone-900 text-white hover:bg-stone-800"
+                    asChild
+                  >
+                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                      Create account
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </nav>
           </div>
         </div>
       )}
