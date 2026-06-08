@@ -9,10 +9,14 @@ type CategoryCarouselProps = {
   ariaLabel?: string
 }
 
+/** Card width + gap used for scroll position tracking */
+export const CATEGORY_CAROUSEL_CARD_WIDTH_RATIO = 0.76
+const CARD_GAP_PX = 12
+
 export default function CategoryCarousel({
   itemCount,
   children,
-  ariaLabel = 'Browse more collections',
+  ariaLabel = 'Shop by category',
 }: CategoryCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -21,8 +25,8 @@ export default function CategoryCarousel({
     const container = scrollRef.current
     if (!container || itemCount === 0) return
 
-    const slideWidth = container.offsetWidth * 0.82
-    const index = Math.round(container.scrollLeft / (slideWidth + 16))
+    const slideWidth = container.offsetWidth * CATEGORY_CAROUSEL_CARD_WIDTH_RATIO
+    const index = Math.round(container.scrollLeft / (slideWidth + CARD_GAP_PX))
     setActiveIndex(Math.min(Math.max(index, 0), itemCount - 1))
   }, [itemCount])
 
@@ -39,7 +43,7 @@ export default function CategoryCarousel({
       <div
         ref={scrollRef}
         className={cn(
-          'flex gap-4 overflow-x-auto pb-1 scroll-smooth snap-x snap-mandatory',
+          'flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1',
           '-mx-4 px-4 touch-pan-x',
           '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
@@ -50,7 +54,7 @@ export default function CategoryCarousel({
 
       {itemCount > 1 && (
         <div
-          className="mt-3 flex items-center justify-center gap-1.5"
+          className="mt-4 flex items-center justify-center gap-1.5"
           aria-hidden
         >
           {Array.from({ length: itemCount }).map((_, index) => (
@@ -59,7 +63,7 @@ export default function CategoryCarousel({
               className={cn(
                 'h-1.5 rounded-full transition-all duration-300',
                 index === activeIndex
-                  ? 'w-5 bg-stone-800'
+                  ? 'w-5 bg-[#B87333]'
                   : 'w-1.5 bg-stone-300',
               )}
             />
@@ -69,3 +73,6 @@ export default function CategoryCarousel({
     </div>
   )
 }
+
+export const CATEGORY_CAROUSEL_ITEM_CLASS =
+  'w-[76vw] max-w-[320px] shrink-0 snap-start snap-always'

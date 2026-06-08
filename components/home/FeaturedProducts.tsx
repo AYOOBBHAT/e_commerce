@@ -23,19 +23,15 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 sm:mb-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-              From Our Kitchen
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
+              Best Sellers
             </p>
             <h2
               id="featured-products-heading"
-              className="mt-2 text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl lg:text-4xl"
+              className="mt-1.5 text-xl font-bold tracking-tight text-stone-900 sm:text-2xl"
             >
               Featured Products
             </h2>
-            <p className="mt-2 text-sm text-stone-600 sm:text-base">
-              Our Most Loved Collections — handpicked staples and handmade treats
-              from Kashmir, ready for your table.
-            </p>
           </div>
 
           <Link

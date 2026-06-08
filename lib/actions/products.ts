@@ -262,3 +262,45 @@ export async function getCategoryStats(): Promise<CategoryStatsMap> {
   }, {});
 }
 
+export type ProductReviewEntry = {
+  productName: string
+  productSlug: string
+  rating: number
+  review: string
+  image?: string
+}
+
+export async function getRecentReviews(
+  limit = 6,
+): Promise<ProductReviewEntry[]> {
+  await connectToDatabase()
+
+  const products = await Product.find({
+    ratings: {
+      $elemMatch: { review: { $exists: true, $nin: [null, ''] } },
+    },
+  })
+    .select('name slug ratings images')
+    .lean()
+
+  const entries: ProductReviewEntry[] = []
+
+  for (const product of products) {
+    for (const rating of product.ratings ?? []) {
+      const review = rating.review?.trim()
+      if (!review) continue
+      entries.push({
+        productName: product.name,
+        productSlug: product.slug,
+        rating: rating.rating,
+        review,
+        image: product.images?.[0],
+      })
+    }
+  }
+
+  return entries
+    .sort((a, b) => b.rating - a.rating || b.review.length - a.review.length)
+    .slice(0, limit)
+}
+
