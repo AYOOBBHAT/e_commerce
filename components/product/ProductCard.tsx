@@ -1,56 +1,70 @@
+'use client'
 
-'use client';
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState } from 'react'
+import { useCart } from '@/components/CartProvider'
+import {
+  formatProductSavings,
+  getCategoryTrustBadges,
+  getProductSocialProof,
+} from '@/lib/product-display'
+import { cn } from '@/lib/utils'
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ShoppingCart, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { useCart } from '@/components/CartProvider';
-
-interface ProductCardProps {
-  product: {
-    id?: string;
-    _id?: string;
-    slug: string;
-    name: string;
-    price: number;
-    comparePrice?: number;
-    unitLabel?: string;
-    variants?: {
-      label: string;
-      price: number;
-      comparePrice?: number;
-      inStock?: boolean;
-    }[];
-    image: string;
-    inStock: boolean;
-    category: string;
-    featured?: boolean;
-  };
+export interface ProductCardProduct {
+  id?: string
+  _id?: string
+  slug: string
+  name: string
+  price: number
+  comparePrice?: number
+  unitLabel?: string
+  variants?: Array<{
+    label: string
+    price: number
+    comparePrice?: number
+    inStock?: boolean
+  }>
+  image: string
+  inStock: boolean
+  category?: string
+  featured?: boolean
+  ratings?: Array<{ rating: number; review?: string }>
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
-  const [isAddedToCart, setIsAddedToCart] = useState(false);
-  const { addToCart } = useCart();
+interface ProductCardProps {
+  product: ProductCardProduct
+  className?: string
+  priority?: boolean
+}
 
-  const primaryVariant = product.variants?.[0];
-  const variantAvailable = primaryVariant ? primaryVariant.inStock !== false : true;
-  const displayPrice = primaryVariant?.price ?? product.price;
+export default function ProductCard({
+  product,
+  className,
+  priority = false,
+}: ProductCardProps) {
+  const { addToCart } = useCart()
+  const [adding, setAdding] = useState(false)
+
+  const primaryVariant = product.variants?.[0]
+  const variantAvailable = primaryVariant ? primaryVariant.inStock !== false : true
+  const displayPrice = primaryVariant?.price ?? product.price
   const displayComparePrice =
-    primaryVariant?.comparePrice ?? (product.comparePrice ?? undefined);
-  const displayUnitLabel = primaryVariant?.label || product.unitLabel;
+    primaryVariant?.comparePrice ?? product.comparePrice ?? undefined
+  const displayUnitLabel = primaryVariant?.label || product.unitLabel
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const trustBadges = getCategoryTrustBadges(product.category)
+  const benefitLine = trustBadges[0]
+  const socialProof = getProductSocialProof(product)
+  const savingsMeta = formatProductSavings(displayPrice, displayComparePrice)
 
-    if (isAddedToCart || !product.inStock || !variantAvailable) return;
+  const productHref = `/products/${product.slug}`
+  const isAvailable = product.inStock && variantAvailable
 
-    setIsAddedToCart(true);
+  const handleAddToCart = () => {
+    if (!isAvailable || adding) return
+
+    setAdding(true)
     addToCart({
       id:
         (product.id || product._id || '') +
@@ -61,94 +75,112 @@ export default function ProductCard({ product }: ProductCardProps) {
       quantity: 1,
       unitLabel: displayUnitLabel,
       variantLabel: primaryVariant?.label,
-    });
-    toast.success('Added to cart');
+    })
 
-    setTimeout(() => {
-      setIsAddedToCart(false);
-    }, 2000);
-  };
+    setTimeout(() => setAdding(false), 1200)
+  }
 
   return (
-    <Link href={`/products/${product.slug}`} className="block h-full">
-      <Card className="group flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-sm bg-white">
-        {/* Product Image */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-lg bg-white">
+    <article
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white',
+        'shadow-sm shadow-stone-900/[0.05]',
+        'motion-safe:transition-shadow motion-safe:hover:shadow-md motion-safe:hover:shadow-stone-900/10',
+        className,
+      )}
+    >
+      <div className="group relative aspect-[4/5] shrink-0 overflow-hidden bg-[#FAF7F2]">
+        <Link
+          href={productHref}
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B87333]"
+          aria-label={`View ${product.name}`}
+        >
           <Image
             src={product.image || '/fallback.png'}
             alt={product.name}
             fill
-            className="object-contain p-4 rounded-t-lg"
-            sizes="(max-width: 768px) 80vw, (max-width: 1200px) 40vw, 25vw"
-            loading="lazy"
+            priority={priority}
+            draggable={false}
+            className="pointer-events-none object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
+            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
+            loading={priority ? undefined : 'lazy'}
             quality={85}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
+        </Link>
 
-          {/* Out of Stock Overlay */}
-          {!product.inStock && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-              <Badge variant="outline" className="bg-background/90 text-base sm:text-lg py-2 px-4 font-semibold shadow-lg">
-                Out of Stock
-              </Badge>
-            </div>
+        {!product.inStock && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-950/40">
+            <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-stone-900">
+              Out of stock
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+        {socialProof && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+            {socialProof}
+          </span>
+        )}
+
+        <h3
+          className={cn(
+            'line-clamp-2 text-sm font-semibold leading-snug text-stone-900',
+            socialProof ? 'mt-1' : '',
+          )}
+        >
+          <Link
+            href={productHref}
+            className="hover:text-[#B87333] focus-visible:outline-none focus-visible:underline"
+          >
+            {product.name}
+          </Link>
+        </h3>
+
+        <div className="mt-2 space-y-0.5">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-base font-bold text-stone-900 sm:text-lg">
+              ₹{displayPrice.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+            </span>
+            {savingsMeta && (
+              <span className="text-xs text-stone-400 line-through">
+                ₹
+                {displayComparePrice!.toLocaleString('en-IN', {
+                  minimumFractionDigits: 0,
+                })}
+              </span>
+            )}
+          </div>
+          {savingsMeta && (
+            <p className="text-[11px] font-medium text-[#4A6741]">
+              Save ₹{savingsMeta.savings.toLocaleString('en-IN')}
+            </p>
+          )}
+          {displayUnitLabel && (
+            <p className="text-[10px] text-stone-500 sm:text-xs">{displayUnitLabel}</p>
           )}
         </div>
 
-        {/* Product Details */}
-        <div className="flex flex-col flex-1 p-2 sm:p-3">
-          {/* Top content */}
-          <div className="flex-1">
-            <div className="text-[11px] sm:text-xs text-black mb-1 uppercase tracking-wide font-medium">
-              {product.category}
-            </div>
-            <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 mb-2 min-h-[2.5rem] leading-tight group-hover:text-primary transition-colors text-black">
-              {product.name}
-            </h3>
+        <p className="mt-1.5 line-clamp-1 text-xs text-stone-600">{benefitLine}</p>
 
-            <div className="space-y-1 mb-2 text-center">
-              <div className="flex items-baseline gap-2 justify-center">
-                <span className="text-lg sm:text-xl font-bold text-emerald-600">
-                  ₹{displayPrice.toFixed(2)}
-                </span>
-                {displayComparePrice && (
-                  <span className="text-xs sm:text-sm text-slate-400 line-through">
-                    ₹{displayComparePrice.toFixed(2)}
-                  </span>
-                )}
-              </div>
-              {displayUnitLabel && (
-                <span className="text-xs text-slate-500 font-medium">
-                  {displayUnitLabel}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Add to Cart button (always bottom) */}
-          <Button
-            className="w-full mt-auto h-8 sm:h-9 font-semibold rounded-lg text-xs sm:text-sm transition-all duration-300 hover:shadow-md bg-purple-600 text-white hover:bg-purple-700"
-            variant={isAddedToCart ? 'outline' : undefined}
-            disabled={!product.inStock || !variantAvailable || isAddedToCart}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart(e);
-            }}
-          >
-            {isAddedToCart ? (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Added!
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-              </>
+        <div className="mt-auto pt-3">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={!isAvailable || adding}
+            aria-label={`Add ${product.name} to cart`}
+            className={cn(
+              'h-10 w-full rounded-full text-xs font-semibold sm:h-11 sm:text-sm',
+              'bg-stone-900 text-white hover:bg-stone-800',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B87333] focus-visible:ring-offset-2',
             )}
-          </Button>
+          >
+            {!isAvailable ? 'Out of Stock' : adding ? 'Adding...' : 'Add to Cart'}
+          </button>
         </div>
-      </Card>
-    </Link>
-  );
+      </div>
+    </article>
+  )
 }

@@ -1,22 +1,8 @@
-import ProductCard from './ProductCard';
-
-interface Product {
-  id?: string;
-  _id?: string;
-  slug: string;
-  name: string;
-  price: number;
-  comparePrice?: number;
-  unitLabel?: string;
-  image: string;
-  inStock: boolean;
-  category: string;
-  featured?: boolean;
-}
+import ProductCard, { type ProductCardProduct } from './ProductCard'
 
 interface ProductGridProps {
-  products: Product[];
-  columns?: 2 | 3 | 4;
+  products: ProductCardProduct[]
+  columns?: 2 | 3 | 4
 }
 
 export default function ProductGrid({ products, columns = 3 }: ProductGridProps) {
@@ -35,7 +21,7 @@ export default function ProductGrid({ products, columns = 3 }: ProductGridProps)
   }
 
   return (
-    <div className={`grid ${gridClass} gap-4 sm:gap-6 lg:gap-8`}>
+    <div className={`grid ${gridClass} gap-3 sm:gap-4 lg:gap-5`}>
       {products.map((product) => (
         <ProductCard key={product._id || product.id || product.slug} product={product} />
       ))}
