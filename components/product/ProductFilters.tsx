@@ -16,6 +16,9 @@ interface ProductFiltersProps {
   productCount: number;
 }
 
+const selectTriggerClass =
+  'h-10 w-full rounded-xl border-stone-200 bg-white text-stone-900 shadow-sm focus:ring-[#B87333] sm:w-48';
+
 export default function ProductFilters({
   availabilityFilter,
   sortOption,
@@ -24,42 +27,56 @@ export default function ProductFilters({
   productCount,
 }: ProductFiltersProps) {
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm mb-8 text-sm text-slate-600">
-      <div className="text-xs uppercase tracking-[0.25em] text-slate-400">
-        Filter & sort
-      </div>
-      <div className="flex flex-1 flex-wrap gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500">Availability</span>
-          <Select value={availabilityFilter} onValueChange={onAvailabilityChange}>
-            <SelectTrigger className="w-48 rounded-full bg-slate-50 border-slate-200">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All products</SelectItem>
-              <SelectItem value="in">In stock</SelectItem>
-              <SelectItem value="out">Out of stock</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="mb-6 rounded-2xl border border-stone-200/80 bg-[#FAF7F2] p-4 shadow-sm shadow-stone-900/[0.03] sm:mb-8 sm:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
+            Filter &amp; Sort
+          </p>
+          <p className="mt-1 text-sm text-stone-600">
+            Showing{' '}
+            <span className="font-semibold text-stone-900">{productCount}</span>{' '}
+            {productCount === 1 ? 'item' : 'items'}
+          </p>
         </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500">Sort by</span>
-          <Select value={sortOption} onValueChange={onSortChange}>
-            <SelectTrigger className="w-48 rounded-full bg-slate-50 border-slate-200">
-              <SelectValue placeholder="Newest" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest arrivals</SelectItem>
-              <SelectItem value="priceLow">Price: Low to High</SelectItem>
-              <SelectItem value="priceHigh">Price: High to Low</SelectItem>
-            </SelectContent>
-          </Select>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+          <div className="flex min-w-[10rem] flex-col gap-1.5">
+            <label
+              htmlFor="availability-filter"
+              className="text-xs font-medium text-stone-700"
+            >
+              Availability
+            </label>
+            <Select value={availabilityFilter} onValueChange={onAvailabilityChange}>
+              <SelectTrigger id="availability-filter" className={selectTriggerClass}>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent className="border-stone-200 bg-white">
+                <SelectItem value="all">All products</SelectItem>
+                <SelectItem value="in">In stock</SelectItem>
+                <SelectItem value="out">Out of stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex min-w-[10rem] flex-col gap-1.5">
+            <label htmlFor="sort-filter" className="text-xs font-medium text-stone-700">
+              Sort by
+            </label>
+            <Select value={sortOption} onValueChange={onSortChange}>
+              <SelectTrigger id="sort-filter" className={selectTriggerClass}>
+                <SelectValue placeholder="Newest" />
+              </SelectTrigger>
+              <SelectContent className="border-stone-200 bg-white">
+                <SelectItem value="newest">Newest arrivals</SelectItem>
+                <SelectItem value="priceLow">Price: Low to High</SelectItem>
+                <SelectItem value="priceHigh">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
-      <div className="text-sm text-slate-500">
-        Showing <span className="font-semibold text-slate-900">{productCount}</span> items
       </div>
     </div>
   );
 }
-

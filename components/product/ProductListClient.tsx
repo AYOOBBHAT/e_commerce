@@ -55,7 +55,7 @@ export default function ProductListClient({ products }: ProductListClientProps) 
       />
 
       {displayedProducts.length === 0 ? (
-        <div className="p-6 text-center">
+        <div className="rounded-2xl border border-stone-200/80 bg-white px-6 py-12 text-center text-sm text-stone-600">
           No products match the selected filters.
         </div>
       ) : (

@@ -58,6 +58,17 @@ export default function Header({ user, navCategories }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -272,10 +283,24 @@ export default function Header({ user, navCategories }: HeaderProps) {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — dimmed overlay + opaque drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-14 z-40 max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-stone-200 bg-[#FAF7F2]/98 backdrop-blur-md shadow-lg sm:top-16 lg:hidden">
-          <div className="container mx-auto px-4 py-5 sm:px-6">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[60] bg-black/45 lg:hidden"
+            aria-label="Close menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          <div
+            className="fixed inset-x-0 top-14 z-[70] flex max-h-[calc(100dvh-3.5rem)] flex-col bg-[#FAF7F2] shadow-2xl sm:top-16 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+          >
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="container mx-auto px-4 py-5 sm:px-6">
             <form onSubmit={handleSearch} className="relative mb-5">
               <Input
                 type="search"
@@ -413,8 +438,10 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 </div>
               )}
             </nav>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
