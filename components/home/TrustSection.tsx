@@ -1,8 +1,7 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import TrustEditorialImage from '@/components/home/TrustEditorialImage'
 import {
-  TRUST_EDITORIAL_IMAGE,
   TRUST_PILLARS,
   TRUST_PROOF_SIGNALS,
   TRUST_SECTION_COPY,
@@ -71,15 +70,8 @@ export default function TrustSection() {
 
         <div className="mt-10 grid gap-10 lg:mt-12 lg:grid-cols-12 lg:gap-12">
           <aside className="lg:col-span-5">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#FAF7F2]">
-              <Image
-                src={TRUST_EDITORIAL_IMAGE.src}
-                alt={TRUST_EDITORIAL_IMAGE.alt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1023px) 100vw, 40vw"
-                quality={85}
-              />
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[#FAF7F2] shadow-sm ring-1 ring-stone-200/80">
+              <TrustEditorialImage />
             </div>
 
             <figure className="mt-6 rounded-2xl border border-stone-100 bg-[#FAF7F2] p-5 sm:p-6">

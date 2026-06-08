@@ -94,8 +94,8 @@ export const TRUST_SECTION_COPY = {
   },
 } as const
 
-/** Editorial image — replace with brand-owned Cloudinary asset when available */
+/** Brand-owned editorial image for the homepage Trust Section */
 export const TRUST_EDITORIAL_IMAGE = {
-  src: 'https://images.unsplash.com/photo-1589308078051-8d76163d9218?auto=format&fit=crop&w=800&h=1000&q=85',
-  alt: 'Handmade laddus and panjeeri prepared in a warm Kashmiri kitchen setting',
+  src: 'https://res.cloudinary.com/dfocwbzzo/image/upload/v1780903032/lodu_z3imt5.png',
+  alt: 'Handmade laddus and Kashmiri treats prepared in the Zescoh kitchen',
 } as const
