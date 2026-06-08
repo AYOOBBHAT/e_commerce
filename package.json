@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:categories": "npx --yes ts-node --project tsconfig.json scripts/seedCategories.ts"
+    "seed:categories": "node scripts/seedCategories.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
