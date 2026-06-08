@@ -55,10 +55,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                 key={product._id || product.id || product.slug}
                 className={FEATURED_CAROUSEL_ITEM_CLASS}
               >
-                <FeaturedProductCard
-                  product={product}
-                  className="touch-pan-y"
-                />
+                <FeaturedProductCard product={product} />
               </div>
             ))}
           </CategoryCarousel>

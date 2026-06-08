@@ -13,7 +13,7 @@ type CategoryCarouselProps = {
 export const CATEGORY_CAROUSEL_CARD_WIDTH_RATIO = 0.76
 const CARD_GAP_PX = 12
 
-/** Shared track styles — native horizontal scroll, no touch-pan-x (blocks vertical page scroll) */
+/** Shared track — native scroll; avoid touch-pan-x (blocks vertical) and touch-pan-y on slides (blocks horizontal) */
 const CAROUSEL_TRACK_CLASS = cn(
   'flex gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain',
   'scroll-smooth snap-x snap-proximity pb-1',
@@ -22,8 +22,7 @@ const CAROUSEL_TRACK_CLASS = cn(
   '[-webkit-overflow-scrolling:touch]',
 )
 
-/** Prioritize vertical page scroll when the gesture starts on a slide */
-export const CAROUSEL_SLIDE_CLASS = 'shrink-0 snap-start touch-pan-y'
+export const CAROUSEL_SLIDE_CLASS = 'shrink-0 snap-start'
 
 export const CATEGORY_CAROUSEL_ITEM_CLASS = cn(
   CAROUSEL_SLIDE_CLASS,

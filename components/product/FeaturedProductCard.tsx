@@ -93,7 +93,7 @@ export function FeaturedProductCard({ product, className }: FeaturedProductCardP
       <div className="group relative aspect-[4/5] overflow-hidden bg-[#FAF7F2]">
         <Link
           href={productHref}
-          className="absolute inset-0 touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B87333]"
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B87333]"
           aria-label={`View ${product.name}`}
         >
           <Image

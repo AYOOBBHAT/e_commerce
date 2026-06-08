@@ -28,7 +28,7 @@ export default function CategoryCard({
       href={`/category/${id}`}
       aria-label={`Browse ${name}, ${countLabel}`}
       className={cn(
-        'group block cursor-pointer touch-pan-y',
+        'group block cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B87333] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F2]',
         className,
       )}
@@ -48,7 +48,7 @@ export default function CategoryCard({
             priority={priority}
             quality={85}
             draggable={false}
-            className="object-cover touch-pan-y"
+            className="object-cover"
             sizes="(max-width: 1023px) 76vw, 25vw"
           />
         </div>
