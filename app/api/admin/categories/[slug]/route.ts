@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Category from '@/models/Category'
-import { getServerSession } from '@/lib/auth'
+import { requireAdminFromDb } from '@/lib/admin/users-access'
 import { invalidateCategoryCache } from '@/lib/actions/categories'
 import { cleanupReplacedCategoryImage } from '@/lib/category-image-lifecycle'
+import { getCategoryDeactivationWarning } from '@/lib/categories/admin-category-response'
 import type { CategoryRecord } from '@/lib/category-types'
+import {
+  buildCategoryAuditFields,
+  buildScalarChangedFields,
+} from '@/lib/audit/admin-metadata'
+import { writeAdminAuditEvent } from '@/lib/audit/write-audit-event'
+import { AUDIT_ACTIONS } from '@/lib/audit/types'
 
 type RouteContext = { params: { slug: string } }
 
-function serializeCategory(doc: {
-  slug: string
-  name: string
-  image: string
-  imagePublicId?: string
-  imageAlt: string
-  sortOrder: number
-  isActive: boolean
-  hideWhenEmpty: boolean
-}) {
+function serializeCategory(doc: CategoryRecord) {
   return {
     slug: doc.slug,
     name: doc.name,
@@ -32,18 +30,16 @@ function serializeCategory(doc: {
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getServerSession()
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdminFromDb()
+    if (!auth.ok) return auth.response
 
     await connectToDatabase()
-    const category = await Category.findOne({ slug: params.slug }).lean()
+    const category = await Category.findOne({ slug: params.slug }).lean<CategoryRecord>()
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    return NextResponse.json(serializeCategory(category as unknown as CategoryRecord), {
+    return NextResponse.json(serializeCategory(category), {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (error) {
@@ -57,10 +53,8 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getServerSession()
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdminFromDb()
+    if (!auth.ok) return auth.response
 
     const data = await request.json()
     await connectToDatabase()
@@ -124,12 +118,47 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       })
     }
 
+    const previousIsActive = existing.isActive
+    const nextIsActive =
+      typeof update.isActive === 'boolean' ? update.isActive : previousIsActive
+
+    const beforeFields = buildCategoryAuditFields(existing.toObject())
+
     existing.set(update)
     await existing.save()
 
+    const changedFields = buildScalarChangedFields(
+      beforeFields,
+      buildCategoryAuditFields(existing.toObject()),
+      Object.keys(update),
+    )
+
+    writeAdminAuditEvent({
+      action: AUDIT_ACTIONS.UPDATE_CATEGORY,
+      adminId: auth.adminId,
+      metadata: {
+        categorySlug: params.slug,
+        changedFields,
+      },
+    })
+
     await invalidateCategoryCache(params.slug)
 
-    return NextResponse.json(serializeCategory(existing.toObject()), {
+    const warning = await getCategoryDeactivationWarning(
+      params.slug,
+      nextIsActive,
+      previousIsActive,
+    )
+
+    const payload = serializeCategory(existing.toObject())
+    if (warning) {
+      return NextResponse.json(
+        { ...payload, success: true, warning },
+        { headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+
+    return NextResponse.json(payload, {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (error) {

@@ -5,6 +5,8 @@ import { getErrorMessage } from '@/lib/errors/message';
 import { parseJsonBody } from '@/lib/payments/validation';
 import { extractRazorpayPaymentEntity } from '@/lib/payments/provider-response';
 import { isRecord } from '@/lib/payments/validation';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
 
@@ -44,6 +46,17 @@ export async function POST(request: NextRequest) {
 
     const event = readWebhookEvent(body);
     const { razorpayPaymentId, razorpayOrderId } = extractRazorpayPaymentEntity(body);
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_WEBHOOK_RECEIVED,
+      metadata: {
+        provider: 'razorpay',
+        transactionId: razorpayPaymentId || razorpayOrderId,
+        paymentStatus: event,
+        paymentMethod: 'razorpay',
+        source: 'webhook',
+      },
+    });
 
     if (event === 'payment.captured' || event === 'payment.authorized' || event === 'order.paid') {
       const result = await finalizeOrder({

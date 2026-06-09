@@ -78,6 +78,11 @@ const formatNumber = (value?: number) => numberFormatter.format(value || 0);
 const formatDate = (value?: string) =>
   value ? new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return 'Unable to load dashboard data.';
+}
+
 const ORDER_TABS = [
   { id: 'pending', label: 'Pending', icon: Clock },
   { id: 'shipped', label: 'Shipped', icon: Truck },
@@ -97,8 +102,8 @@ export default function AdminDashboard() {
         if (!res.ok) throw new Error('Failed to fetch dashboard data');
         const data = await res.json();
         setStats(data);
-      } catch (err: any) {
-        setError(err.message || 'Unable to load dashboard data.');
+      } catch (err: unknown) {
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }

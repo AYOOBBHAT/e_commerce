@@ -1,13 +1,11 @@
-import { getCategoryStats } from '@/lib/actions/products'
-import { getStorefrontCategories } from '@/lib/actions/categories'
+import { getStorefrontCategoryPresentation } from '@/lib/actions/categories'
 import CategoryCard from '@/components/home/CategoryCard'
 import CategoryCarousel, {
   CATEGORY_CAROUSEL_ITEM_CLASS,
 } from '@/components/home/CategoryCarousel'
 
 export default async function CategoryGrid() {
-  const stats = await getCategoryStats()
-  const categories = await getStorefrontCategories(stats)
+  const { categories, stats } = await getStorefrontCategoryPresentation()
 
   if (!categories.length) {
     return null

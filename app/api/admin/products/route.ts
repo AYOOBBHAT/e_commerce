@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
-import { getServerSession } from '@/lib/auth';
+import { requireAdminFromDb } from '@/lib/admin/users-access';
 import { invalidateProductCache } from '@/lib/actions/products';
 import {
   getMainImageStatusLabel,
@@ -16,6 +16,9 @@ import {
   mergeProductFilters,
 } from '@/lib/products/admin-search';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
+import { validateProductCategorySlug } from '@/lib/categories/product-category';
+import { writeAdminAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 type CategorySlugLean = {
   slug: string;
@@ -43,16 +46,6 @@ type SerializedAdminProduct = AdminProductLean & {
   variantCount: number;
   mainImageStatus: string;
 };
-
-function requireAdmin(session: Awaited<ReturnType<typeof getServerSession>>) {
-  if (!session?.userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  if (session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-  return null;
-}
 
 async function buildCategoryNameMap() {
   const categories = await Category.find()
@@ -89,9 +82,8 @@ function serializeAdminProduct(
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    const authError = requireAdmin(session);
-    if (authError) return authError;
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) return auth.response;
 
     await connectToDatabase();
 
@@ -142,9 +134,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    const authError = requireAdmin(session);
-    if (authError) return authError;
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) return auth.response;
 
     await connectToDatabase();
     const data = await request.json();
@@ -162,6 +153,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: featuredError }, { status: 400 });
     }
 
+    const categoryValidation = await validateProductCategorySlug(data.category);
+    if (!categoryValidation.ok) {
+      return NextResponse.json({ error: categoryValidation.error }, { status: 400 });
+    }
+    data.category = categoryValidation.slug;
+
     const product = await Product.create(data);
     try {
       revalidatePath('/products');
@@ -177,6 +174,19 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.warn('revalidatePath failed:', e);
     }
+
+    writeAdminAuditEvent({
+      action: AUDIT_ACTIONS.CREATE_PRODUCT,
+      adminId: auth.adminId,
+      metadata: {
+        productId: product._id.toString(),
+        slug: product.slug,
+        category: product.category,
+        price: product.price,
+        quantity: product.quantity,
+      },
+    });
+
     return NextResponse.json(product, {
       status: 201,
       headers: {

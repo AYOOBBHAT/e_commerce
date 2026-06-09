@@ -2,8 +2,12 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { AlertCircle, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import { analyzeProductImageFile } from '@/lib/analyze-product-image'
+import {
+  previewProductImageFile,
+  type ProductImagePreviewResult,
+} from '@/lib/product-image-preview-validation'
 import {
   IMAGE_STATUS_LABELS,
   isAllowedManualImageStatus,
@@ -12,6 +16,7 @@ import {
   type ProductImageStatus,
 } from '@/lib/product-image-quality'
 import ProductImageGuidelines from '@/components/admin/ProductImageGuidelines'
+import ProductImageRequirementsCard from '@/components/admin/ProductImageRequirementsCard'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +38,25 @@ const STATUS_STYLES: Record<ProductImageStatus, string> = {
   featured_ready: 'bg-[#B87333]/15 text-[#8B5A2B]',
 }
 
+const PREVIEW_LEVEL_STYLES: Record<
+  ProductImagePreviewResult['level'],
+  string
+> = {
+  featured_ready: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  ok: 'border-stone-200 bg-stone-50 text-stone-800',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+}
+
+function PreviewStatusIcon({ level }: { level: ProductImagePreviewResult['level'] }) {
+  if (level === 'featured_ready') {
+    return <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+  }
+  if (level === 'warning') {
+    return <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+  }
+  return <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
+}
+
 export default function ProductImageUploadPanel({
   images,
   imageMeta,
@@ -40,6 +64,9 @@ export default function ProductImageUploadPanel({
 }: ProductImageUploadPanelProps) {
   const [uploading, setUploading] = useState(false)
   const [rejections, setRejections] = useState<string[]>([])
+  const [previewResults, setPreviewResults] = useState<ProductImagePreviewResult[]>(
+    [],
+  )
 
   const metaByUrl = new Map(imageMeta.map((entry) => [entry.url, entry]))
 
@@ -66,11 +93,32 @@ export default function ProductImageUploadPanel({
 
     setUploading(true)
     setRejections([])
+    setPreviewResults([])
+
+    const fileList = Array.from(files)
+    const previews = await Promise.all(
+      fileList.map(async (file) => {
+        try {
+          return await previewProductImageFile(file)
+        } catch {
+          return {
+            fileName: file.name,
+            width: 0,
+            height: 0,
+            aspectRatioLabel: '—',
+            level: 'warning' as const,
+            message: 'Warning: could not read image dimensions',
+          }
+        }
+      }),
+    )
+    setPreviewResults(previews)
+
     const nextImages = [...images]
     const nextMeta = [...imageMeta]
     const rejected: string[] = []
 
-    for (const file of Array.from(files)) {
+    for (const file of fileList) {
       try {
         const analysis = await analyzeProductImageFile(file)
         if (!analysis.passed) {
@@ -138,7 +186,11 @@ export default function ProductImageUploadPanel({
       <ProductImageGuidelines />
 
       <div>
-        <Label htmlFor="product-images">Product Images</Label>
+        <ProductImageRequirementsCard />
+
+        <Label htmlFor="product-images" className="mt-4 block">
+          Product Images
+        </Label>
         <p className="mb-2 text-xs text-muted-foreground">
           First image is the homepage hero. Uploads are validated for 4:5 editorial
           quality before Cloudinary upload.
@@ -158,6 +210,38 @@ export default function ProductImageUploadPanel({
           </p>
         )}
       </div>
+
+      {previewResults.length > 0 && (
+        <div className="space-y-2" aria-live="polite">
+          <p className="text-xs font-semibold text-stone-700">
+            Selected image check
+          </p>
+          <ul className="space-y-2">
+            {previewResults.map((result) => (
+              <li
+                key={result.fileName}
+                className={cn(
+                  'rounded-md border px-3 py-2 text-xs',
+                  PREVIEW_LEVEL_STYLES[result.level],
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <PreviewStatusIcon level={result.level} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{result.fileName}</p>
+                    <p className="mt-0.5">
+                      {result.width > 0 && result.height > 0
+                        ? `${result.width}×${result.height} · ${result.aspectRatioLabel}`
+                        : result.aspectRatioLabel}
+                    </p>
+                    <p className="mt-1">{result.message}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {rejections.length > 0 && (
         <div

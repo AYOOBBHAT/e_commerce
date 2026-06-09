@@ -22,6 +22,10 @@ import {
 } from '@/lib/orders/idempotency';
 import { buildOrderCreatePayload } from '@/lib/orders/create-payload';
 import { getErrorMessage } from '@/lib/errors/message';
+import { invalidateCategoryStatsCache } from '@/lib/categories/category-stats';
+import { inventoryChangesFromResults } from '@/lib/audit/inventory-metadata';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 function cachedOrderResponse(existing: {
   orderId?: string;
@@ -210,6 +214,15 @@ export async function POST(request: NextRequest) {
             );
           }
         }
+        await invalidateCategoryStatsCache();
+        void writeAuditEvent({
+          action: AUDIT_ACTIONS.INVENTORY_ROLLBACK,
+          metadata: {
+            source: 'checkout_cod_create_failed',
+            paymentMethod: 'cod',
+            inventoryChanges: inventoryChangesFromResults(codInventoryResults),
+          },
+        });
       }
 
       if (isDuplicateKeyError(createErr)) {
@@ -228,6 +241,31 @@ export async function POST(request: NextRequest) {
 
     await finalizeIdempotencyKey(effectiveIdempotencyKey, order._id.toString());
     claimHeld = false;
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.ORDER_CREATED,
+      orderId: order._id.toString(),
+      userId: session?.userId,
+      metadata: {
+        paymentMethod,
+        paymentStatus: 'pending',
+        source: 'checkout',
+        orderPublicId: order.orderId || merchantOrderId,
+      },
+    });
+
+    if (paymentMethod === 'cod' && codInventoryResults.length > 0) {
+      void writeAuditEvent({
+        action: AUDIT_ACTIONS.INVENTORY_DECREMENTED,
+        orderId: order._id.toString(),
+        userId: session?.userId,
+        metadata: {
+          source: 'checkout_cod',
+          paymentMethod: 'cod',
+          inventoryChanges: inventoryChangesFromResults(codInventoryResults),
+        },
+      });
+    }
 
     console.info('[orders][create] created order', {
       orderId: order.orderId,

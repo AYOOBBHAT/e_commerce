@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import Audit from '@/models/Audit';
-import { getServerSession } from '@/lib/auth';
+import { requireAdminFromDb } from '@/lib/admin/users-access';
 import { findOrderByPublicId } from '@/lib/orders/resolve';
-import { restoreInventoryForOrder } from '@/lib/orders/inventory-restore';
+import { restoreInventoryWithClaim } from '@/lib/orders/inventory-restore';
 import { validateOrderStatusTransition } from '@/lib/orders/status-transitions';
+import { parseAdminOrderPatchBody } from '@/lib/admin/order-patch';
 
 async function loadAdminOrder(id: string) {
   const order = await findOrderByPublicId(id);
@@ -20,9 +21,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     await connectToDatabase();
@@ -44,13 +45,19 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     await connectToDatabase();
-    const data = await request.json();
+    const rawBody: unknown = await request.json();
+    const parsed = parseAdminOrderPatchBody(rawBody);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const data = parsed.value;
 
     const existing = await findOrderByPublicId(params.id);
     if (!existing) {
@@ -61,7 +68,7 @@ export async function PATCH(
     const prevStatus = existing.status;
 
     const update: Record<string, unknown> = {};
-    if (typeof data.status === 'string') {
+    if (data.status) {
       const transition = validateOrderStatusTransition(prevStatus, data.status);
       if (!transition.allowed) {
         return NextResponse.json({ error: transition.error }, { status: 400 });
@@ -69,13 +76,15 @@ export async function PATCH(
       update.status = data.status;
     }
 
-    if (data.paymentInfo && typeof data.paymentInfo.status === 'string') {
-      update['paymentInfo.status'] = data.paymentInfo.status;
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update. Only order status can be changed.' },
+        { status: 400 },
+      );
     }
 
     const isCancelling =
       update.status === 'cancelled' && prevStatus !== 'cancelled';
-    const shouldRestoreInventory = isCancelling && existing.inventoryAdjusted;
 
     const order = await Order.findByIdAndUpdate(
       orderMongoId,
@@ -89,13 +98,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    if (shouldRestoreInventory) {
+    if (isCancelling) {
       try {
-        await restoreInventoryForOrder(order);
-        await Order.findByIdAndUpdate(orderMongoId, {
-          $set: { inventoryAdjusted: false },
+        const restoreOutcome = await restoreInventoryWithClaim(orderMongoId, {
+          orderId: orderMongoId,
+          source: 'admin_cancel',
         });
-        order.inventoryAdjusted = false;
+
+        if (restoreOutcome === 'in_progress') {
+          return NextResponse.json(
+            {
+              error:
+                'Inventory restore is already in progress for this order. Retry shortly.',
+            },
+            { status: 409 },
+          );
+        }
       } catch (invErr) {
         console.error('[admin][orders] inventory restore on cancel failed', invErr);
         return NextResponse.json(
@@ -108,10 +126,20 @@ export async function PATCH(
       }
     }
 
+    const responseOrder = isCancelling
+      ? await Order.findById(orderMongoId)
+          .populate('user', 'name email')
+          .populate('orderItems.product')
+      : order;
+
+    if (!responseOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
     try {
       if (update.status && update.status !== prevStatus) {
         await Audit.create({
-          adminId: session.userId,
+          adminId: auth.adminId,
           orderId: orderMongoId,
           action: 'update_order_status',
           before: prevStatus,
@@ -141,7 +169,7 @@ export async function PATCH(
         if (customerEmail) {
           await sendShippingUpdateEmail({
             email: customerEmail,
-            orderId: order.orderId || orderMongoId,
+            orderId: responseOrder.orderId || orderMongoId,
             trackingNumber: data.trackingNumber,
           });
         }
@@ -150,7 +178,7 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ order, previousStatus: prevStatus });
+    return NextResponse.json({ order: responseOrder, previousStatus: prevStatus });
   } catch (error) {
     console.error('Error updating order:', error);
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });

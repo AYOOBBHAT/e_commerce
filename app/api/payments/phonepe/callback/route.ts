@@ -15,6 +15,8 @@ import {
   validatePhonePeWebhookSignature,
 } from '@/lib/payments/phonepe-client';
 import type { PhonePeCallbackValidation } from '@/lib/payments/types';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS, auditOrderIdFromMerchantRef } from '@/lib/audit/types';
 
 function mergeCallbackPayload(
   body: Record<string, unknown>,
@@ -93,6 +95,17 @@ export async function POST(request: NextRequest) {
 
     const state = resolvePhonePeStatusState(statusResponse);
     const resolvedTransactionId = resolvePhonePeTransactionId(transactionId, statusResponse);
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_WEBHOOK_RECEIVED,
+      orderId: auditOrderIdFromMerchantRef(merchantTransactionId),
+      metadata: {
+        provider: 'phonepe',
+        transactionId: resolvedTransactionId || merchantTransactionId,
+        paymentStatus: state,
+        source: 'webhook',
+      },
+    });
 
     try {
       const result = await finalizePaymentOrder({

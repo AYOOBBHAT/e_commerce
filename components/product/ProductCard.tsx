@@ -42,7 +42,7 @@ interface ProductCardProps {
 }
 
 const ctaButtonClass = cn(
-  'inline-flex h-10 w-full items-center justify-center rounded-full text-xs font-semibold sm:h-11 sm:text-sm',
+  'inline-flex h-9 w-full min-h-[2.25rem] items-center justify-center rounded-full text-xs font-semibold sm:h-10 sm:min-h-[2.5rem] sm:text-sm',
   'bg-stone-900 text-white hover:bg-stone-800',
   'disabled:cursor-not-allowed disabled:opacity-50',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B87333] focus-visible:ring-offset-2',
@@ -87,6 +87,13 @@ export default function ProductCard({
   const savingsMeta = hasMultipleVariants
     ? null
     : formatProductSavings(displayPrice, displayComparePrice)
+
+  const metadataLine = useMemo(() => {
+    const parts: string[] = []
+    if (displayUnitLabel) parts.push(displayUnitLabel)
+    if (benefitLine) parts.push(benefitLine)
+    return parts.length > 0 ? parts.join(' • ') : null
+  }, [displayUnitLabel, benefitLine])
 
   const productHref = `/products/${product.slug}`
   const productImage = product.image?.trim() ? product.image : PRODUCT_FALLBACK_IMAGE
@@ -157,17 +164,17 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+      <div className="flex min-h-0 flex-1 flex-col p-2.5 sm:p-3">
         {socialProof && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+          <span className="text-[9px] font-bold uppercase tracking-wide text-amber-700 sm:text-[10px]">
             {socialProof}
           </span>
         )}
 
         <h3
           className={cn(
-            'line-clamp-2 text-sm font-semibold leading-snug text-stone-900',
-            socialProof ? 'mt-1' : '',
+            'line-clamp-2 text-sm font-semibold leading-tight text-stone-900',
+            socialProof ? 'mt-0.5' : '',
           )}
         >
           <Link
@@ -178,10 +185,10 @@ export default function ProductCard({
           </Link>
         </h3>
 
-        <div className="mt-2 space-y-0.5">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <div className="mt-1.5">
+          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
             {hasMultipleVariants && (
-              <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:text-xs">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500">
                 From
               </span>
             )}
@@ -189,27 +196,28 @@ export default function ProductCard({
               ₹{displayPrice.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
             </span>
             {savingsMeta && (
-              <span className="text-xs text-stone-400 line-through">
-                ₹
-                {displayComparePrice!.toLocaleString('en-IN', {
-                  minimumFractionDigits: 0,
-                })}
-              </span>
+              <>
+                <span className="text-[11px] text-stone-400 line-through">
+                  ₹
+                  {displayComparePrice!.toLocaleString('en-IN', {
+                    minimumFractionDigits: 0,
+                  })}
+                </span>
+                <span className="text-[10px] font-medium text-[#4A6741] sm:text-[11px]">
+                  Save ₹{savingsMeta.savings.toLocaleString('en-IN')}
+                </span>
+              </>
             )}
           </div>
-          {savingsMeta && (
-            <p className="text-[11px] font-medium text-[#4A6741]">
-              Save ₹{savingsMeta.savings.toLocaleString('en-IN')}
-            </p>
-          )}
-          {displayUnitLabel && (
-            <p className="text-[10px] text-stone-500 sm:text-xs">{displayUnitLabel}</p>
-          )}
         </div>
 
-        <p className="mt-1.5 line-clamp-1 text-xs text-stone-600">{benefitLine}</p>
+        {metadataLine && (
+          <p className="mt-1 line-clamp-1 text-[10px] text-stone-500 sm:text-[11px]">
+            {metadataLine}
+          </p>
+        )}
 
-        <div className="mt-auto pt-3">
+        <div className="mt-auto pt-2">
           {hasMultipleVariants ? (
             <Link
               href={productHref}

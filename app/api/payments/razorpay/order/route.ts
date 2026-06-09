@@ -5,6 +5,8 @@ import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 import { getErrorMessage } from '@/lib/errors/message';
 import { parseRazorpayOrderPayload } from '@/lib/payments/validation';
 import type { RazorpayOrderCreateParams, RazorpayOrderResponse } from '@/lib/payments/types';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 const KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
@@ -70,6 +72,18 @@ export async function POST(req: Request) {
         getErrorMessage(persistErr, 'persist failed'),
       );
     }
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_INITIATED,
+      orderId: receipt,
+      metadata: {
+        provider: 'razorpay',
+        transactionId: order.id,
+        paymentStatus: 'pending',
+        paymentMethod: 'razorpay',
+        source: 'payment_initiate',
+      },
+    });
 
     return NextResponse.json(order);
   } catch (err: unknown) {

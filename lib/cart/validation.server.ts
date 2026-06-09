@@ -10,6 +10,10 @@ import type {
   ValidatedOrder,
 } from '@/lib/cart/types'
 import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants'
+import { invalidateCategoryStatsCache } from '@/lib/categories/category-stats'
+import { inventoryChangesFromResults } from '@/lib/audit/inventory-metadata'
+import { writeAuditEvent } from '@/lib/audit/write-audit-event'
+import { AUDIT_ACTIONS, type InventoryAuditContext } from '@/lib/audit/types'
 
 type VariantDoc = {
   label: string
@@ -308,6 +312,7 @@ export async function decrementInventoryForOrderItem(
 
 export async function decrementInventoryForOrderItems(
   items: Array<{ product?: string; quantity?: number }>,
+  auditContext?: InventoryAuditContext,
 ): Promise<InventoryAdjustResult[]> {
   const results: InventoryAdjustResult[] = []
 
@@ -321,19 +326,45 @@ export async function decrementInventoryForOrderItems(
       )
       if (result) results.push(result)
     }
+    await invalidateCategoryStatsCache()
+
+    if (auditContext && results.length > 0) {
+      void writeAuditEvent({
+        action: AUDIT_ACTIONS.INVENTORY_DECREMENTED,
+        orderId: auditContext.orderId,
+        metadata: {
+          source: auditContext.source,
+          inventoryChanges: inventoryChangesFromResults(results),
+        },
+      })
+    }
+
     return results
   } catch (error) {
-    for (const result of results) {
-      try {
-        const restoredQty = result.previousQty - result.updatedQty
-        if (restoredQty > 0) {
-          await incrementInventoryForOrderItem(
-            result.productDoc._id.toString(),
-            restoredQty,
-          )
+    if (results.length > 0) {
+      for (const result of results) {
+        try {
+          const restoredQty = result.previousQty - result.updatedQty
+          if (restoredQty > 0) {
+            await incrementInventoryForOrderItem(
+              result.productDoc._id.toString(),
+              restoredQty,
+            )
+          }
+        } catch (rollbackErr) {
+          console.error('[inventory] rollback failed', rollbackErr)
         }
-      } catch (rollbackErr) {
-        console.error('[inventory] rollback failed', rollbackErr)
+      }
+
+      if (auditContext) {
+        void writeAuditEvent({
+          action: AUDIT_ACTIONS.INVENTORY_ROLLBACK,
+          orderId: auditContext.orderId,
+          metadata: {
+            source: auditContext.source,
+            inventoryChanges: inventoryChangesFromResults(results),
+          },
+        })
       }
     }
     throw error

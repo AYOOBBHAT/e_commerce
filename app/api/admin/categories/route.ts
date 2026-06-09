@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Category from '@/models/Category'
-import { getServerSession } from '@/lib/auth'
+import { requireAdminFromDb } from '@/lib/admin/users-access'
 import { invalidateCategoryCache } from '@/lib/actions/categories'
 import type { CategoryRecord } from '@/lib/category-types'
+import { writeAdminAuditEvent } from '@/lib/audit/write-audit-event'
+import { AUDIT_ACTIONS } from '@/lib/audit/types'
 
-function serializeCategory(doc: {
-  slug: string
-  name: string
-  image: string
-  imagePublicId?: string
-  imageAlt: string
-  sortOrder: number
-  isActive: boolean
-  hideWhenEmpty: boolean
-}) {
+function serializeCategory(doc: CategoryRecord) {
   return {
     slug: doc.slug,
     name: doc.name,
@@ -37,20 +30,16 @@ function normalizeSlug(value: string) {
 
 export async function GET() {
   try {
-    const session = await getServerSession()
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdminFromDb()
+    if (!auth.ok) return auth.response
 
     await connectToDatabase()
     const categories = await Category.find()
       .sort({ sortOrder: 1, name: 1 })
-      .lean()
+      .lean<CategoryRecord[]>()
 
     return NextResponse.json(
-      categories.map((category) =>
-        serializeCategory(category as unknown as CategoryRecord),
-      ),
+      categories.map((category) => serializeCategory(category)),
       { headers: { 'Cache-Control': 'no-store' } },
     )
   } catch (error) {
@@ -64,10 +53,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdminFromDb()
+    if (!auth.ok) return auth.response
 
     const data = await request.json()
     const slug = normalizeSlug(data.slug || data.name || '')
@@ -91,7 +78,9 @@ export async function POST(request: NextRequest) {
 
     await connectToDatabase()
 
-    const existing = await Category.findOne({ slug }).lean()
+    const existing = await Category.findOne({ slug })
+      .select('slug')
+      .lean<{ slug: string }>()
     if (existing) {
       return NextResponse.json(
         { error: 'A category with this slug already exists' },
@@ -120,6 +109,16 @@ export async function POST(request: NextRequest) {
     })
 
     await invalidateCategoryCache(slug)
+
+    writeAdminAuditEvent({
+      action: AUDIT_ACTIONS.CREATE_CATEGORY,
+      adminId: auth.adminId,
+      metadata: {
+        categorySlug: slug,
+        name,
+        isActive: data.isActive !== false,
+      },
+    })
 
     return NextResponse.json(serializeCategory(category.toObject()), {
       status: 201,

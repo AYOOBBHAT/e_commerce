@@ -8,6 +8,8 @@ import {
   parseRoleUpdate,
   requireAdminFromDb,
 } from '@/lib/admin/users-access';
+import { writeAdminAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 export async function GET(
   request: NextRequest,
@@ -80,6 +82,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    writeAdminAuditEvent({
+      action: AUDIT_ACTIONS.UPDATE_USER_ROLE,
+      adminId: auth.adminId,
+      before: target.role,
+      after: parsed.role,
+      metadata: { targetUserId: targetId },
+    });
+
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
@@ -112,6 +122,16 @@ export async function DELETE(
     if (lastAdminDeleteResponse) return lastAdminDeleteResponse;
 
     await User.findByIdAndDelete(params.id);
+
+    writeAdminAuditEvent({
+      action: AUDIT_ACTIONS.DELETE_USER,
+      adminId: auth.adminId,
+      metadata: {
+        targetUserId: targetId,
+        email: target.email,
+        role: target.role,
+      },
+    });
 
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {

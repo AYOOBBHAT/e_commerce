@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Audit from '@/models/Audit';
 import User from '@/models/User';
-import { getServerSession } from '@/lib/auth';
+import { requireAdminFromDb } from '@/lib/admin/users-access';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase();
-    const session = await getServerSession();
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));

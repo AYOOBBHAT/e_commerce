@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Package, Users, ShoppingCart,
-  Settings, ChevronDown, Menu, Layers
+  Settings, ChevronDown, Menu, Layers, Warehouse
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +33,11 @@ const menuItems = [
     title: 'Orders',
     href: '/admin/orders',
     icon: ShoppingCart,
+  },
+  {
+    title: 'Inventory',
+    href: '/admin/inventory',
+    icon: Warehouse,
   },
   {
     title: 'Users',

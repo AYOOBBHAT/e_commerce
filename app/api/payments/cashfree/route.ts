@@ -7,6 +7,8 @@ import type {
   CashfreeOrderApiResponse,
   CashfreeSessionApiResponse,
 } from '@/lib/payments/types';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
@@ -133,6 +135,18 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_INITIATED,
+      orderId,
+      metadata: {
+        provider: 'cashfree',
+        transactionId: sessionData.payment_session_id,
+        paymentStatus: 'pending',
+        paymentMethod: 'cashfree',
+        source: 'payment_initiate',
+      },
+    });
 
     return NextResponse.json({
       order_id: orderData.order_id,

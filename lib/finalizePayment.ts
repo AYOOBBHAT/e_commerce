@@ -3,7 +3,7 @@ import type { IOrder } from '@/models/Order';
 import type { HydratedDocument } from 'mongoose';
 import { connectToDatabase } from './db';
 import nodemailer from 'nodemailer';
-import { restoreInventoryForOrder } from '@/lib/orders/inventory-restore';
+import { restoreInventoryWithClaim } from '@/lib/orders/inventory-restore';
 import {
   applyInventoryForOrderLines,
   claimInventoryFinalizeLockWithRetry,
@@ -11,6 +11,7 @@ import {
   extractOrderInventoryLines,
   releaseInventoryFinalizeLock,
   rollbackInventoryAdjustments,
+  clearInventoryReservation,
 } from '@/lib/orders/inventory-apply';
 import {
   isPrepaidOrderFinalized,
@@ -19,6 +20,8 @@ import {
 } from '@/lib/orders/inventory-consistency';
 import { getErrorMessage } from '@/lib/errors/message';
 import { extractMerchantOrderIdFromProviderResponse } from '@/lib/payments/provider-response';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 export type FinalizeOpts = {
   provider: string;
@@ -120,7 +123,7 @@ export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult>
     stateStr === 'PAYMENT_FAILED' ||
     stateStr === 'FAILED_AUTH'
   ) {
-    await finalizeFailedPayment(order, { txId });
+    await finalizeFailedPayment(order, { txId, provider });
     return { ok: true, orderId };
   }
 
@@ -145,6 +148,18 @@ async function finalizeSuccessfulPayment(
 
   if (isPrepaidOrderFinalized(order)) {
     console.info('[payments][finalizeOrder] already finalized', orderId);
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_COMPLETED,
+      orderId,
+      metadata: {
+        provider,
+        transactionId: txId || order.paymentInfo?.transactionId,
+        paymentStatus: 'completed',
+        paymentMethod: order.paymentInfo?.method || provider,
+        source: 'finalize_payment',
+        idempotent: true,
+      },
+    });
     return { ok: true, idempotent: true, orderId };
   }
 
@@ -164,6 +179,18 @@ async function finalizeSuccessfulPayment(
   const claim = await claimInventoryFinalizeLockWithRetry(orderId);
   if (!claim.claimed) {
     if (claim.reason === 'already_finalized') {
+      void writeAuditEvent({
+        action: AUDIT_ACTIONS.PAYMENT_COMPLETED,
+        orderId,
+        metadata: {
+          provider,
+          transactionId: txId,
+          paymentStatus: 'completed',
+          paymentMethod: order.paymentInfo?.method || provider,
+          source: 'finalize_payment',
+          idempotent: true,
+        },
+      });
       return { ok: true, idempotent: true, orderId };
     }
     if (claim.reason === 'inventory_failed') {
@@ -190,16 +217,27 @@ async function finalizeSuccessfulPayment(
 
   const lines = extractOrderInventoryLines(order);
   let inventoryResults: Awaited<ReturnType<typeof applyInventoryForOrderLines>> = [];
-  const alreadyReserved = Boolean(order.inventoryReservedAt) && !order.inventoryAdjusted;
+  const lockedOrder =
+    claim.claimed && claim.order && typeof claim.order === 'object'
+      ? (claim.order as { inventoryReservedAt?: Date; inventoryAdjusted?: boolean })
+      : order;
+  const alreadyReserved =
+    Boolean(lockedOrder.inventoryReservedAt) && !lockedOrder.inventoryAdjusted;
 
   if (!alreadyReserved) {
     try {
-      inventoryResults = await applyInventoryForOrderLines(lines);
+      inventoryResults = await applyInventoryForOrderLines(lines, {
+        orderId,
+        source: 'payment_finalize',
+      });
       await Order.findByIdAndUpdate(orderId, {
         $set: { inventoryReservedAt: new Date() },
       });
     } catch (invErr: unknown) {
-      await rollbackInventoryAdjustments(inventoryResults);
+      await rollbackInventoryAdjustments(inventoryResults, {
+        orderId,
+        source: 'payment_finalize_inventory_failure',
+      });
       await releaseInventoryFinalizeLock(orderId);
 
       const inventoryError = getErrorMessage(
@@ -224,6 +262,19 @@ async function finalizeSuccessfulPayment(
       console.error('[payments][finalizeOrder] inventory adjustment failed', {
         orderId,
         inventoryError,
+      });
+
+      void writeAuditEvent({
+        action: AUDIT_ACTIONS.PAYMENT_COMPLETED,
+        orderId,
+        metadata: {
+          provider,
+          transactionId: txId,
+          paymentStatus: 'completed',
+          paymentMethod: order.paymentInfo?.method || provider,
+          source: 'finalize_payment',
+          state: 'inventory_failure_cancelled',
+        },
       });
 
       return { ok: false, inventoryError, orderId };
@@ -268,8 +319,13 @@ async function finalizeSuccessfulPayment(
   });
 
   if (!committed) {
-    if (!alreadyReserved) {
-      await rollbackInventoryAdjustments(inventoryResults);
+    if (!alreadyReserved && inventoryResults.length > 0) {
+      await rollbackInventoryAdjustments(inventoryResults, {
+        orderId,
+        source: 'payment_finalize_commit_failed',
+      });
+    } else if (!alreadyReserved) {
+      await clearInventoryReservation(orderId);
     }
     await releaseInventoryFinalizeLock(orderId);
 
@@ -326,31 +382,63 @@ async function finalizeSuccessfulPayment(
   }
 
   console.info('[payments][finalizeOrder] finalized order', orderId);
+
+  void writeAuditEvent({
+    action: AUDIT_ACTIONS.PAYMENT_COMPLETED,
+    orderId,
+    metadata: {
+      provider,
+      transactionId: txId || order.paymentInfo?.transactionId,
+      paymentStatus: 'completed',
+      paymentMethod: order.paymentInfo?.method || provider,
+      source: 'finalize_payment',
+    },
+  });
+
   return { ok: true, orderId };
 }
 
-async function finalizeFailedPayment(order: FinalizableOrder, opts: { txId?: string }) {
-  const { txId } = opts;
+async function finalizeFailedPayment(order: FinalizableOrder, opts: { txId?: string; provider?: string }) {
+  const { txId, provider } = opts;
+  const orderId = order._id.toString();
+
+  if (
+    order.status === 'confirmed' &&
+    order.paymentInfo?.status === 'completed'
+  ) {
+    console.info(
+      '[payments][finalizeOrder] ignoring failed payment for finalized order',
+      orderId,
+    );
+    return;
+  }
 
   order.paymentInfo = order.paymentInfo || { method: 'cod', status: 'pending' };
   order.paymentInfo.status = 'failed';
   if (txId) order.paymentInfo.transactionId = txId;
   order.status = 'cancelled';
 
-  if (order.inventoryAdjusted) {
-    try {
-      await restoreInventoryForOrder(order);
-      order.inventoryAdjusted = false;
-    } catch (invErr: unknown) {
-      console.error(
-        '[payments][finalizeOrder] inventory restore failed',
-        getErrorMessage(invErr, 'restore failed'),
-      );
-    }
+  try {
+    await restoreInventoryWithClaim(orderId, {
+      orderId,
+      source: 'payment_failed',
+    });
+  } catch (invErr: unknown) {
+    console.error(
+      '[payments][finalizeOrder] inventory restore failed',
+      getErrorMessage(invErr, 'restore failed'),
+    );
   }
 
-  order.inventoryFinalizing = false;
-  await order.save();
+  await Order.findByIdAndUpdate(orderId, {
+    $set: {
+      status: 'cancelled',
+      inventoryFinalizing: false,
+      'paymentInfo.status': 'failed',
+      'paymentInfo.method': order.paymentInfo?.method || provider || 'cod',
+      ...(txId ? { 'paymentInfo.transactionId': txId } : {}),
+    },
+  });
 
   try {
     const transporter = nodemailer.createTransport({
@@ -390,4 +478,16 @@ async function finalizeFailedPayment(order: FinalizableOrder, opts: { txId?: str
   }
 
   console.info('[payments][finalizeOrder] marked failed for', order._id);
+
+  void writeAuditEvent({
+    action: AUDIT_ACTIONS.PAYMENT_FAILED,
+    orderId,
+    metadata: {
+      provider: provider || order.paymentInfo?.method,
+      transactionId: txId || order.paymentInfo?.transactionId,
+      paymentStatus: 'failed',
+      paymentMethod: order.paymentInfo?.method,
+      source: 'finalize_payment',
+    },
+  });
 }

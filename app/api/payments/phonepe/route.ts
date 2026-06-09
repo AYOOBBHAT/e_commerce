@@ -7,6 +7,8 @@ import { getErrorMessage } from '@/lib/errors/message';
 import { parsePhonePeInitiatePayload } from '@/lib/payments/validation';
 import { extractPhonePeRedirectUrl } from '@/lib/payments/provider-response';
 import { getPhonePeClient, isPhonePeSandbox } from '@/lib/payments/phonepe-client';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 const PHONEPE_CLIENT_ID = process.env.PHONEPE_CLIENT_ID;
 const PHONEPE_CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET;
@@ -145,6 +147,18 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_INITIATED,
+      orderId,
+      metadata: {
+        provider: 'phonepe',
+        transactionId: orderId,
+        paymentStatus: 'pending',
+        paymentMethod: 'phonepe',
+        source: 'payment_initiate',
+      },
+    });
 
     return NextResponse.json({
       data: {

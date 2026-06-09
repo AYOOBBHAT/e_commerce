@@ -1,59 +1,39 @@
-"use client";
+import { getAllProducts } from '@/lib/actions/products'
+import ProductListClient from '@/components/product/ProductListClient'
+import ProductListingHeader from '@/components/product/ProductListingHeader'
 
-import { useEffect, useState } from "react";
-import ProductGrid from "@/components/product/ProductGrid";
+export const revalidate = 3600
 
-export default function FeaturedProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const metadata = {
+  title: 'Featured Products',
+  description:
+    'Handpicked best sellers, dry fruits, and wellness staples the community loves most.',
+  openGraph: {
+    title: 'Featured Products',
+    description:
+      'Handpicked best sellers, dry fruits, and wellness staples the community loves most.',
+  },
+}
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/products");
-        if (!res.ok) throw new Error("Failed to fetch products");
-        let data = await res.json();
-        // Map images[0] to image for compatibility with ProductCard
-        data = data.map((p: any) => ({ ...p, image: p.images?.[0] || "" }));
-        setProducts(data.filter((p: any) => p.featured));
-      } catch (err: any) {
-        setError(err.message || "Error fetching products");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+export default async function FeaturedProductsPage() {
+  const products = await getAllProducts({ featured: true })
 
-    return (
-      <section className="py-12 md:py-16 bg-gradient-to-b from-emerald-50/40 via-white to-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Best sellers</p>
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Featured Products</h1>
-              <p className="text-sm text-slate-500 mt-1">
-                Handpicked combos, dry fruits, and wellness staples the community loves most.
-              </p>
-            </div>
-            <div className="text-sm text-slate-500">
-              Showing <span className="font-semibold text-slate-900">{products.length}</span> picks
-            </div>
+  return (
+    <section className="bg-[#FAF7F2] py-10 sm:py-14 lg:py-16">
+      <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <ProductListingHeader
+          title="Featured Products"
+          description="Handpicked combos, dry fruits, and wellness staples the community loves most."
+        />
+
+        {!products.length ? (
+          <div className="rounded-2xl border border-stone-200/80 bg-white px-6 py-12 text-center text-sm text-stone-600">
+            No featured products found.
           </div>
-
-          {loading ? (
-            <div className="p-6 text-center">Loading products...</div>
-          ) : error ? (
-            <div className="p-6 text-center text-destructive">{error}</div>
-          ) : !products.length ? (
-            <div className="p-6 text-center">No featured products found.</div>
-          ) : (
-            <ProductGrid products={products} ariaLabel="Featured products" />
-          )}
-        </div>
-      </section>
-    );
+        ) : (
+          <ProductListClient products={products} />
+        )}
+      </div>
+    </section>
+  )
 }

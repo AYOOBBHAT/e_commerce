@@ -5,6 +5,7 @@ import Product from '@/models/Product';
 import mongoose from 'mongoose';
 import { getCached, invalidateByTags } from '@/lib/redis';
 import { CacheKeys, hashFilters } from '@/lib/cache-keys';
+import { invalidateCategoryStatsCache } from '@/lib/categories/category-stats';
 
 // Pagination types
 export interface PaginationOptions {
@@ -225,8 +226,9 @@ export async function invalidateProductCache(productSlug?: string, category?: st
   const tags: string[] = [CacheKeys.tags.products];
   if (productSlug) tags.push(CacheKeys.tags.product(productSlug));
   if (category) tags.push(CacheKeys.tags.category(category));
-  
+
   await invalidateByTags(tags);
+  await invalidateCategoryStatsCache();
 }
 
 // Get featured products
@@ -240,54 +242,7 @@ export async function getProductsByCategory(category: string) {
   return fetchAllProductPages({ category });
 }
 
-export type CategoryStatsMap = Record<
-  string,
-  { count: number; fromPrice: number | null }
->;
-
-// Aggregate in-stock product counts and minimum price per category slug
-export async function getCategoryStats(): Promise<CategoryStatsMap> {
-  await connectToDatabase();
-
-  const rows = await Product.aggregate<{
-    _id: string;
-    count: number;
-    fromPrice: number;
-  }>([
-    { $match: { inStock: true } },
-    {
-      $project: {
-        category: 1,
-        effectiveMinPrice: {
-          $min: {
-            $concatArrays: [
-              ['$price'],
-              {
-                $map: {
-                  input: { $ifNull: ['$variants', []] },
-                  as: 'variant',
-                  in: '$$variant.price',
-                },
-              },
-            ],
-          },
-        },
-      },
-    },
-    {
-      $group: {
-        _id: '$category',
-        count: { $sum: 1 },
-        fromPrice: { $min: '$effectiveMinPrice' },
-      },
-    },
-  ]);
-
-  return rows.reduce<CategoryStatsMap>((acc, row) => {
-    acc[row._id] = { count: row.count, fromPrice: row.fromPrice ?? null };
-    return acc;
-  }, {});
-}
+// Category stats: see lib/categories/category-stats.ts (re-exported above).
 
 export type ProductReviewEntry = {
   productName: string

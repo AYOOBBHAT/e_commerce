@@ -9,6 +9,8 @@ import {
   mapPaymentStatusToFinalizeState,
 } from '@/lib/payments/provider-response';
 import type { CashfreeOrderStatusResponse } from '@/lib/payments/types';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS, auditOrderIdFromMerchantRef } from '@/lib/audit/types';
 
 const CASHFREE_SECRET = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
@@ -90,6 +92,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (!resolvedState) resolvedState = 'PENDING';
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_WEBHOOK_RECEIVED,
+      orderId: auditOrderIdFromMerchantRef(orderId),
+      metadata: {
+        provider: 'cashfree',
+        transactionId: paymentId,
+        paymentStatus: resolvedState,
+        paymentMethod: 'cashfree',
+        source: 'webhook',
+      },
+    });
 
     const result = await finalizeOrder({
       provider: 'cashfree',

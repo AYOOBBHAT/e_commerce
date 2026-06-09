@@ -1,5 +1,5 @@
 import type { CategoryRecord } from '@/lib/category-types'
-import type { CategoryStatsMap } from '@/lib/actions/products'
+import type { CategoryStatsMap } from '@/lib/categories/category-stats'
 
 export function filterStorefrontCategories(
   categories: CategoryRecord[],

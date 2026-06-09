@@ -8,6 +8,8 @@ import { getErrorMessage } from '@/lib/errors/message';
 import { parseRazorpayVerifyPayload } from '@/lib/payments/validation';
 import type { HydratedDocument } from 'mongoose';
 import type { IOrder } from '@/models/Order';
+import { writeAuditEvent } from '@/lib/audit/write-audit-event';
+import { AUDIT_ACTIONS } from '@/lib/audit/types';
 
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
@@ -73,6 +75,18 @@ export async function POST(req: Request) {
       $set: {
         'paymentInfo.method': 'razorpay',
         'paymentInfo.razorpayOrderId': razorpayOrderId,
+      },
+    });
+
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.PAYMENT_WEBHOOK_RECEIVED,
+      orderId: order._id.toString(),
+      metadata: {
+        provider: 'razorpay',
+        transactionId: razorpayPaymentId,
+        paymentStatus: 'CAPTURED',
+        paymentMethod: 'razorpay',
+        source: 'client_verify',
       },
     });
 

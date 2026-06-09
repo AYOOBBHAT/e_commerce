@@ -7,6 +7,10 @@ import {
 } from '@/lib/cart/validation.server'
 
 import type { OrderInventorySnapshot } from '@/lib/orders/inventory-consistency'
+import { invalidateCategoryStatsCache } from '@/lib/categories/category-stats'
+import { inventoryChangesFromResults } from '@/lib/audit/inventory-metadata'
+import { writeAuditEvent } from '@/lib/audit/write-audit-event'
+import { AUDIT_ACTIONS, type InventoryAuditContext } from '@/lib/audit/types'
 
 const FINALIZE_LOCK_STALE_MS = 5 * 60 * 1000
 const FINALIZE_LOCK_RETRY_MS = 250
@@ -41,8 +45,18 @@ export function extractOrderInventoryLines(order: {
     }))
 }
 
+/** Clears a stale reservation so finalize retries perform a fresh decrement. */
+export async function clearInventoryReservation(orderId: string): Promise<void> {
+  await connectToDatabase()
+  await Order.updateOne(
+    { _id: orderId, inventoryAdjusted: { $ne: true } },
+    { $unset: { inventoryReservedAt: '' } },
+  )
+}
+
 export async function rollbackInventoryAdjustments(
   results: InventoryAdjustResult[],
+  auditContext?: InventoryAuditContext,
 ): Promise<void> {
   for (const result of results) {
     const restoredQty = result.previousQty - result.updatedQty
@@ -56,15 +70,32 @@ export async function rollbackInventoryAdjustments(
       console.error('[inventory] rollback failed', rollbackErr)
     }
   }
+  await invalidateCategoryStatsCache()
+
+  if (auditContext?.orderId) {
+    await clearInventoryReservation(auditContext.orderId)
+  }
+
+  if (auditContext && results.length > 0) {
+    void writeAuditEvent({
+      action: AUDIT_ACTIONS.INVENTORY_ROLLBACK,
+      orderId: auditContext.orderId,
+      metadata: {
+        source: auditContext.source,
+        inventoryChanges: inventoryChangesFromResults(results),
+      },
+    })
+  }
 }
 
 export async function applyInventoryForOrderLines(
   lines: OrderInventoryLine[],
+  auditContext?: InventoryAuditContext,
 ): Promise<InventoryAdjustResult[]> {
   if (!lines.length) {
     throw new Error('Order has no inventory lines.')
   }
-  return decrementInventoryForOrderItems(lines)
+  return decrementInventoryForOrderItems(lines, auditContext)
 }
 
 function isOrderSuccessfullyFinalized(order: OrderInventorySnapshot) {

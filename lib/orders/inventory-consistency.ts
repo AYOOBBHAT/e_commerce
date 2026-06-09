@@ -1,6 +1,8 @@
 export type OrderInventorySnapshot = {
   status?: string
   inventoryAdjusted?: boolean
+  inventoryRestoring?: boolean
+  inventoryRestoreStockApplied?: boolean
   inventoryFailureReason?: string
   inventoryReservedAt?: Date
   paymentInfo?: { status?: string; method?: string }

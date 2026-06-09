@@ -17,9 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Ensure the logged-in user owns this order
-    // Order schema stores user as ObjectId
-    if (order.user && order.user.toString() !== session.userId.toString()) {
+    // Registered orders: owner only. Guest orders (no user ref) are not accessible here.
+    if (!order.user || order.user.toString() !== session.userId.toString()) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

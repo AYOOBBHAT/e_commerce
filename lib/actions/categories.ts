@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { connectToDatabase } from '@/lib/db'
 import Category from '@/models/Category'
@@ -11,22 +12,13 @@ import { filterStorefrontCategories } from '@/lib/category-utils'
 import {
   getCategoryStats,
   type CategoryStatsMap,
-} from '@/lib/actions/products'
+} from '@/lib/categories/category-stats'
 
 import type { CategoryRecord, NavCategory } from '@/lib/category-types'
 
 export type { CategoryRecord, NavCategory } from '@/lib/category-types'
 
-function serializeCategory(doc: {
-  slug: string
-  name: string
-  image: string
-  imagePublicId?: string
-  imageAlt: string
-  sortOrder: number
-  isActive: boolean
-  hideWhenEmpty: boolean
-}): CategoryRecord {
+function serializeCategory(doc: CategoryRecord): CategoryRecord {
   return {
     slug: doc.slug,
     name: doc.name,
@@ -41,8 +33,8 @@ function serializeCategory(doc: {
 
 async function fetchCategoriesFromDb(): Promise<CategoryRecord[]> {
   await connectToDatabase()
-  const rows = await Category.find().sort({ sortOrder: 1, name: 1 }).lean()
-  return rows.map((row) => serializeCategory(row as unknown as CategoryRecord))
+  const rows = await Category.find().sort({ sortOrder: 1, name: 1 }).lean<CategoryRecord[]>()
+  return rows.map((row) => serializeCategory(row))
 }
 
 export async function getAllCategories(): Promise<CategoryRecord[]> {
@@ -57,7 +49,7 @@ export async function getAllCategories(): Promise<CategoryRecord[]> {
   )
 }
 
-export async function resolveCategoryCatalog(): Promise<CategoryRecord[]> {
+async function resolveCategoryCatalogImpl(): Promise<CategoryRecord[]> {
   if (!useDbCategories()) {
     return getFallbackCategories()
   }
@@ -69,16 +61,40 @@ export async function resolveCategoryCatalog(): Promise<CategoryRecord[]> {
   return fromDb
 }
 
+/** Request-scoped memo for category catalog resolution. */
+export const resolveCategoryCatalog = cache(resolveCategoryCatalogImpl)
+
+export type StorefrontCategoryPresentation = {
+  categories: CategoryRecord[]
+  stats: CategoryStatsMap
+}
+
+const loadStorefrontCategoryPresentation = cache(
+  async (): Promise<StorefrontCategoryPresentation> => {
+    const [stats, catalog] = await Promise.all([
+      getCategoryStats(),
+      resolveCategoryCatalog(),
+    ])
+    return {
+      stats,
+      categories: filterStorefrontCategories(catalog, stats),
+    }
+  },
+)
+
 export async function getStorefrontCategories(
   stats?: CategoryStatsMap,
 ): Promise<CategoryRecord[]> {
-  const statsMap = stats ?? (await getCategoryStats())
-  const catalog = await resolveCategoryCatalog()
-  return filterStorefrontCategories(catalog, statsMap)
+  if (stats !== undefined) {
+    const catalog = await resolveCategoryCatalog()
+    return filterStorefrontCategories(catalog, stats)
+  }
+  const { categories } = await loadStorefrontCategoryPresentation()
+  return categories
 }
 
 export async function getNavCategories(): Promise<NavCategory[]> {
-  const categories = await getStorefrontCategories()
+  const { categories } = await loadStorefrontCategoryPresentation()
   return categories.map(({ slug, name }) => ({ slug, name }))
 }
 
@@ -107,4 +123,9 @@ export async function invalidateCategoryCache(slug?: string) {
     revalidatePath(`/category/${slug}`)
     revalidateTag(CacheKeys.tags.category(slug))
   }
+}
+
+/** Homepage grid: same stats + filter snapshot as layout nav (request-memoized). */
+export async function getStorefrontCategoryPresentation(): Promise<StorefrontCategoryPresentation> {
+  return loadStorefrontCategoryPresentation()
 }

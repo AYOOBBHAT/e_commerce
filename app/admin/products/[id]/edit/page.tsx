@@ -126,27 +126,44 @@ export default function EditProductPage() {
     }
     setIsLoading(true);
     try {
+      const currentRes = await fetch(`/api/admin/products/${productId}`);
+      if (!currentRes.ok) {
+        throw new Error('Failed to refresh product quantity');
+      }
+      const currentProduct = await currentRes.json();
+      const currentQuantity =
+        typeof currentProduct.quantity === 'number' ? currentProduct.quantity : 0;
+      const desiredQuantity = parseInt(form.quantity, 10);
+      const inventoryAdjustment = desiredQuantity - currentQuantity;
+
+      const payload: Record<string, unknown> = {
+        name: form.name,
+        slug: form.slug,
+        description: form.description,
+        price: parseFloat(form.price),
+        comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : undefined,
+        unitLabel: form.unitLabel.trim() || undefined,
+        category: form.category,
+        variants: variants
+          .filter((variant) => variant.label && variant.price)
+          .map((variant) => ({
+            label: variant.label,
+            price: parseFloat(variant.price),
+            comparePrice: variant.comparePrice ? parseFloat(variant.comparePrice) : undefined,
+          })),
+        images: images,
+        imageMeta: syncImageMetaWithUrls(images, imageMeta),
+        featured: form.featured,
+      };
+
+      if (inventoryAdjustment !== 0) {
+        payload.inventoryAdjustment = inventoryAdjustment;
+      }
+
       const res = await fetch(`/api/admin/products/${productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          price: parseFloat(form.price),
-          comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : undefined,
-          unitLabel: form.unitLabel.trim() || undefined,
-          variants: variants
-            .filter((variant) => variant.label && variant.price)
-            .map((variant) => ({
-              label: variant.label,
-              price: parseFloat(variant.price),
-              comparePrice: variant.comparePrice ? parseFloat(variant.comparePrice) : undefined,
-            })),
-          quantity: parseInt(form.quantity, 10),
-          images: images,
-          imageMeta: syncImageMetaWithUrls(images, imageMeta),
-          inStock: parseInt(form.quantity, 10) > 0,
-          featured: form.featured,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const errorData = await res.json();

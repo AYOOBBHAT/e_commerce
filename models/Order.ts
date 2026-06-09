@@ -40,6 +40,9 @@ export interface IOrder extends Document {
   inventoryAdjusted?: boolean;
   inventoryFinalizing?: boolean;
   inventoryReservedAt?: Date;
+  inventoryRestoring?: boolean;
+  inventoryRestoreClaimedAt?: Date;
+  inventoryRestoreStockApplied?: boolean;
   inventoryFailureReason?: string;
   finalSnapshot?: any;
   isProductionTest?: boolean;
@@ -75,6 +78,9 @@ const orderSchema = new Schema<IOrder>(
     inventoryAdjusted: { type: Boolean, default: false },
     inventoryFinalizing: { type: Boolean, default: false },
     inventoryReservedAt: { type: Date },
+    inventoryRestoring: { type: Boolean, default: false },
+    inventoryRestoreClaimedAt: { type: Date },
+    inventoryRestoreStockApplied: { type: Boolean, default: false },
     inventoryFailureReason: { type: String },
     finalSnapshot: { type: Object },
     isProductionTest: { type: Boolean, default: false },
@@ -98,5 +104,7 @@ const orderSchema = new Schema<IOrder>(
   },
   { timestamps: true }
 );
+
+orderSchema.index({ status: 1, createdAt: -1 });
 
 export default mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema);
