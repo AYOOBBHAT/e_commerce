@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     if (search.trim()) {
       const escaped = search.trim().replace(/[-\\/^$*+?.()|[\]{}]/g, '\\$&');
       const nameRegex = new RegExp(escaped, 'i');
-      const matchingSlugs = [...categoryNameMap.entries()]
+      const matchingSlugs = Array.from(categoryNameMap.entries())
         .filter(([, name]) => nameRegex.test(name))
         .map(([slug]) => slug);
 
