@@ -96,7 +96,7 @@ export async function GET() {
     const CATEGORY_LABELS = await getCategoryNameMap();
 
     const [orders, totalUsers] = await Promise.all([
-      Order.find().populate('user', 'name email').lean<StatsOrderLean>(),
+      Order.find().populate('user', 'name email').lean<StatsOrderLean[]>(),
       User.countDocuments(),
     ]);
 
