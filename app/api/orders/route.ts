@@ -11,7 +11,7 @@ import {
   type InventoryAdjustResult,
 } from '@/lib/cart/validation.server';
 import { verifyOrderInventoryConsistency } from '@/lib/orders/inventory-consistency';
-import { generateIdempotencyKey } from '@/lib/utils/idempotency';
+import { resolveIdempotencyKey } from '@/lib/utils/idempotency';
 import {
   claimIdempotencyKey,
   finalizeIdempotencyKey,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let codInventoryResults: InventoryAdjustResult[] = [];
-  let effectiveIdempotencyKey: string | null = null;
+  let claimKey: string | undefined;
   let claimHeld = false;
 
   try {
@@ -111,17 +111,26 @@ export async function POST(request: NextRequest) {
     const validatedSubtotal = validatedOrder.subtotal;
     const validatedTotal = validatedOrder.total;
 
-    effectiveIdempotencyKey =
-      idempotencyKey ||
-      generateIdempotencyKey({
-        items: normalizedItems.map((item: any) => ({
-          id: item.productId || item.id || '',
-          quantity: item.quantity || 0,
-        })),
-        total: validatedTotal,
-        email,
-        phone,
-      });
+    const idempotencyResolution = resolveIdempotencyKey({
+      clientKey: idempotencyKey,
+      items: normalizedItems.map((item) => ({
+        id: item.productId || item.id || '',
+        quantity: item.quantity || 0,
+      })),
+      total: validatedTotal,
+      email,
+      phone,
+    });
+
+    if (!idempotencyResolution.ok) {
+      return NextResponse.json(
+        { error: idempotencyResolution.error },
+        { status: 400 },
+      );
+    }
+
+    const effectiveIdempotencyKey = idempotencyResolution.key;
+    claimKey = effectiveIdempotencyKey;
 
     const claim = await claimIdempotencyKey(effectiveIdempotencyKey);
     if (claim.status === 'existing') {
@@ -204,7 +213,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (isDuplicateKeyError(createErr) && effectiveIdempotencyKey) {
+      if (isDuplicateKeyError(createErr)) {
         const existing = await findOrderByIdempotencyKey(effectiveIdempotencyKey);
         if (existing) {
           await finalizeIdempotencyKey(effectiveIdempotencyKey, existing._id.toString());
@@ -304,8 +313,8 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    if (claimHeld && effectiveIdempotencyKey) {
-      await releaseIdempotencyKey(effectiveIdempotencyKey);
+    if (claimHeld && claimKey) {
+      await releaseIdempotencyKey(claimKey);
     }
     console.error('Order creation error:', error);
     return NextResponse.json({ error: 'Order creation failed' }, { status: 500 });
