@@ -1,16 +1,30 @@
 import { NextResponse } from 'next/server';
 import { resolveOrderPaymentAmount } from '@/lib/orders/payment-amount';
 import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
+import { getErrorMessage } from '@/lib/errors/message';
+import { parseCashfreeInitiatePayload } from '@/lib/payments/validation';
+import type {
+  CashfreeOrderApiResponse,
+  CashfreeSessionApiResponse,
+} from '@/lib/payments/types';
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_API_VERSION = process.env.CASHFREE_API_VERSION || '2022-09-01';
 
-// Use test URL for sandbox, production URL for live
-const BASE_URL = process.env.CASHFREE_BASE_URL || 
-  (CASHFREE_APP_ID?.startsWith('TEST') 
-    ? 'https://sandbox.cashfree.com/pg' 
+const BASE_URL =
+  process.env.CASHFREE_BASE_URL ||
+  (CASHFREE_APP_ID?.startsWith('TEST')
+    ? 'https://sandbox.cashfree.com/pg'
     : 'https://api.cashfree.com/pg');
+
+async function readCashfreeError(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return { message: `HTTP ${response.status}` };
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -24,34 +38,37 @@ export async function POST(req: Request) {
     });
     if (limited) return limited;
 
-    const { amount, orderId, redirectUrl, customerDetails } = await req.json();
-
-    if (!orderId) {
-      return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
+    const rawBody: unknown = await req.json();
+    const parsed = parseCashfreeInitiatePayload(rawBody);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    const paymentAmount = await resolveOrderPaymentAmount(String(orderId), amount);
+    const { orderId, amount, redirectUrl, customerDetails } = parsed.value;
+
+    const paymentAmount = await resolveOrderPaymentAmount(orderId, amount);
     if (!paymentAmount.ok) {
       return NextResponse.json({ error: paymentAmount.error }, { status: paymentAmount.status });
     }
 
     const orderAmount = paymentAmount.amount;
-    const isDummy = !CASHFREE_APP_ID || CASHFREE_APP_ID === 'placeholder' || 
-                   !CASHFREE_SECRET_KEY || CASHFREE_SECRET_KEY === 'placeholder';
+    const isDummy =
+      !CASHFREE_APP_ID ||
+      CASHFREE_APP_ID === 'placeholder' ||
+      !CASHFREE_SECRET_KEY ||
+      CASHFREE_SECRET_KEY === 'placeholder';
 
     if (isDummy) {
-      // Return fake response for test mode
       return NextResponse.json({
         order_id: orderId,
         payment_session_id: `session_${Date.now()}`,
-        payment_link: `${redirectUrl}?test=true&order_id=${orderId}`,
+        payment_link: `${redirectUrl || ''}?test=true&order_id=${orderId}`,
         amount: orderAmount,
         status: 'created',
-        testMode: true
+        testMode: true,
       });
     }
 
-    // Prepare order payload for Cashfree
     const orderPayload = {
       order_id: orderId,
       order_amount: orderAmount,
@@ -68,49 +85,54 @@ export async function POST(req: Request) {
       },
     };
 
-    // Create order in Cashfree
     const orderResponse = await fetch(`${BASE_URL}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-version': CASHFREE_API_VERSION,
-        'x-client-id': CASHFREE_APP_ID,
-        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-client-id': CASHFREE_APP_ID ?? '',
+        'x-client-secret': CASHFREE_SECRET_KEY ?? '',
       },
       body: JSON.stringify(orderPayload),
     });
 
     if (!orderResponse.ok) {
-      const errorData = await orderResponse.json();
+      const errorData = await readCashfreeError(orderResponse);
       console.error('Cashfree order creation error:', errorData);
       return NextResponse.json({ error: errorData }, { status: orderResponse.status });
     }
 
-    const orderData = await orderResponse.json();
+    const orderData = (await orderResponse.json()) as CashfreeOrderApiResponse;
 
-    // Create payment session
-    const sessionPayload = {
-      order_token: orderData.order_token,
-    };
+    if (!orderData.order_token) {
+      return NextResponse.json({ error: 'Cashfree order response missing order_token' }, { status: 502 });
+    }
 
     const sessionResponse = await fetch(`${BASE_URL}/orders/sessions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-version': CASHFREE_API_VERSION,
-        'x-client-id': CASHFREE_APP_ID,
-        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-client-id': CASHFREE_APP_ID ?? '',
+        'x-client-secret': CASHFREE_SECRET_KEY ?? '',
       },
-      body: JSON.stringify(sessionPayload),
+      body: JSON.stringify({ order_token: orderData.order_token }),
     });
 
     if (!sessionResponse.ok) {
-      const errorData = await sessionResponse.json();
+      const errorData = await readCashfreeError(sessionResponse);
       console.error('Cashfree session creation error:', errorData);
       return NextResponse.json({ error: errorData }, { status: sessionResponse.status });
     }
 
-    const sessionData = await sessionResponse.json();
+    const sessionData = (await sessionResponse.json()) as CashfreeSessionApiResponse;
+
+    if (!sessionData.payment_session_id) {
+      return NextResponse.json(
+        { error: 'Cashfree session response missing payment_session_id' },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({
       order_id: orderData.order_id,
@@ -118,12 +140,11 @@ export async function POST(req: Request) {
       payment_link: `https://payments.cashfree.com/forms/cashfree/${sessionData.payment_session_id}`,
       ...sessionData,
     });
-  } catch (error: any) {
-    console.error('Cashfree error:', error);
+  } catch (error: unknown) {
+    console.error('Cashfree error:', getErrorMessage(error, 'Cashfree payment error'));
     return NextResponse.json(
-      { error: error?.message || 'Cashfree payment error' },
-      { status: 500 }
+      { error: getErrorMessage(error, 'Cashfree payment error') },
+      { status: 500 },
     );
   }
 }
-

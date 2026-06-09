@@ -1,4 +1,6 @@
 import Order from '@/models/Order';
+import type { IOrder } from '@/models/Order';
+import type { HydratedDocument } from 'mongoose';
 import { connectToDatabase } from './db';
 import nodemailer from 'nodemailer';
 import { restoreInventoryForOrder } from '@/lib/orders/inventory-restore';
@@ -15,13 +17,15 @@ import {
   verifyOrderInventoryConsistency,
   type OrderInventorySnapshot,
 } from '@/lib/orders/inventory-consistency';
+import { getErrorMessage } from '@/lib/errors/message';
+import { extractMerchantOrderIdFromProviderResponse } from '@/lib/payments/provider-response';
 
 export type FinalizeOpts = {
   provider: string;
   merchantOrderId?: string;
   txId?: string;
   state?: string;
-  providerResponse?: any;
+  providerResponse?: unknown;
 };
 
 export type FinalizeResult = {
@@ -32,12 +36,15 @@ export type FinalizeResult = {
   orderId?: string;
 };
 
-export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult> {
-  const { provider, merchantOrderId, txId, state = '', providerResponse } = opts;
+type FinalizableOrder = HydratedDocument<IOrder>;
 
-  await connectToDatabase();
+async function findOrderByMerchantOrTx(
+  merchantOrderId?: string,
+  txId?: string,
+  providerResponse?: unknown,
+): Promise<FinalizableOrder | null> {
+  let order: FinalizableOrder | null = null;
 
-  let order = null as any;
   if (merchantOrderId) {
     try {
       order = await Order.findById(String(merchantOrderId));
@@ -50,45 +57,42 @@ export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult>
     order = await Order.findOne({ 'paymentInfo.transactionId': String(txId) });
   }
 
-  try {
-    if (!order && providerResponse) {
-      const resp = providerResponse;
-      const candidate =
-        resp?.data?.merchantOrderId ||
-        resp?.data?.merchantTransactionId ||
-        resp?.data?.order_id ||
-        resp?.order_id ||
-        resp?.merchantTransactionId ||
-        resp?.merchantOrderId ||
-        resp?.merchant_order_id;
+  if (!order && providerResponse) {
+    try {
+      const candidate = extractMerchantOrderIdFromProviderResponse(providerResponse);
       if (candidate) {
         order = await Order.findById(String(candidate));
       }
 
-      const rzpCandidate =
-        resp?.payload?.payment?.entity?.order_id ||
-        resp?.payload?.payment?.entity?.orderId ||
-        resp?.payment?.order_id ||
-        resp?.order_id;
-      if (!order && rzpCandidate) {
+      if (!order) {
         order = await Order.findOne({
-          'paymentInfo.razorpayOrderId': String(rzpCandidate),
+          'paymentInfo.razorpayOrderId': String(candidate || merchantOrderId || ''),
         });
       }
+    } catch {
+      // ignore lookup errors
     }
-  } catch {
-    // ignore lookup errors
   }
 
-  try {
-    if (!order && merchantOrderId && String(merchantOrderId).startsWith('order_')) {
+  if (!order && merchantOrderId && String(merchantOrderId).startsWith('order_')) {
+    try {
       order = await Order.findOne({
         'paymentInfo.razorpayOrderId': String(merchantOrderId),
       });
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
+
+  return order;
+}
+
+export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult> {
+  const { provider, merchantOrderId, txId, state = '', providerResponse } = opts;
+
+  await connectToDatabase();
+
+  const order = await findOrderByMerchantOrTx(merchantOrderId, txId, providerResponse);
 
   if (!order) {
     console.warn('[payments][finalizeOrder] order not found for', { merchantOrderId, txId });
@@ -96,7 +100,7 @@ export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult>
   }
 
   const orderId = order._id.toString();
-  const stateStr = String((state || '').toUpperCase()).trim();
+  const stateStr = String(state || '').toUpperCase().trim();
 
   if (
     stateStr === 'COMPLETED' ||
@@ -121,7 +125,7 @@ export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult>
   }
 
   if (stateStr === 'PENDING' || stateStr === 'PAYMENT_PENDING') {
-    order.paymentInfo = order.paymentInfo || {};
+    order.paymentInfo = order.paymentInfo || { method: 'cod', status: 'pending' };
     order.paymentInfo.status = 'pending';
     if (txId) order.paymentInfo.transactionId = txId;
     await order.save();
@@ -134,7 +138,7 @@ export async function finalizeOrder(opts: FinalizeOpts): Promise<FinalizeResult>
 }
 
 async function finalizeSuccessfulPayment(
-  order: any,
+  order: FinalizableOrder,
   opts: { provider: string; txId?: string; orderId: string },
 ): Promise<FinalizeResult> {
   const { provider, txId, orderId } = opts;
@@ -163,11 +167,17 @@ async function finalizeSuccessfulPayment(
       return { ok: true, idempotent: true, orderId };
     }
     if (claim.reason === 'inventory_failed') {
+      const failedOrder = claim.order;
+      const inventoryFailureReason =
+        failedOrder &&
+        typeof failedOrder === 'object' &&
+        'inventoryFailureReason' in failedOrder &&
+        typeof (failedOrder as { inventoryFailureReason?: string }).inventoryFailureReason === 'string'
+          ? (failedOrder as { inventoryFailureReason: string }).inventoryFailureReason
+          : 'Insufficient stock for one or more items.';
       return {
         ok: false,
-        inventoryError:
-          (claim.order as { inventoryFailureReason?: string })?.inventoryFailureReason ||
-          'Insufficient stock for one or more items.',
+        inventoryError: inventoryFailureReason,
         orderId,
         idempotent: true,
       };
@@ -188,12 +198,14 @@ async function finalizeSuccessfulPayment(
       await Order.findByIdAndUpdate(orderId, {
         $set: { inventoryReservedAt: new Date() },
       });
-    } catch (invErr: any) {
+    } catch (invErr: unknown) {
       await rollbackInventoryAdjustments(inventoryResults);
       await releaseInventoryFinalizeLock(orderId);
 
-      const inventoryError =
-        invErr?.message || 'Insufficient stock for one or more items.';
+      const inventoryError = getErrorMessage(
+        invErr,
+        'Insufficient stock for one or more items.',
+      );
 
       await Order.findByIdAndUpdate(orderId, {
         $set: {
@@ -229,16 +241,19 @@ async function finalizeSuccessfulPayment(
           });
         }
       }
-    } catch (alertErr) {
-      console.error('[payments][finalizeOrder] low inventory alert failed', alertErr);
+    } catch (alertErr: unknown) {
+      console.error(
+        '[payments][finalizeOrder] low inventory alert failed',
+        getErrorMessage(alertErr, 'alert failed'),
+      );
     }
   }
 
   const orderNumber =
     order.orderNumber || 'INV-' + Date.now().toString(36).toUpperCase();
   const finalSnapshot = order.finalSnapshot || {
-    items: order.orderItems || order.items || [],
-    totalPrice: order.totalPrice || order.total,
+    items: order.orderItems || [],
+    totalPrice: order.totalPrice,
     shippingAddress: order.shippingAddress,
   };
 
@@ -258,7 +273,7 @@ async function finalizeSuccessfulPayment(
     }
     await releaseInventoryFinalizeLock(orderId);
 
-    const current = (await Order.findById(orderId).lean()) as OrderInventorySnapshot | null;
+    const current = await Order.findById(orderId).lean<OrderInventorySnapshot>();
     if (current && isPrepaidOrderFinalized(current)) {
       return { ok: true, idempotent: true, orderId };
     }
@@ -267,7 +282,7 @@ async function finalizeSuccessfulPayment(
     return { ok: false, error: 'Could not commit order finalize', orderId };
   }
 
-  const finalized = (await Order.findById(orderId).lean()) as OrderInventorySnapshot | null;
+  const finalized = await Order.findById(orderId).lean<OrderInventorySnapshot>();
   if (finalized) {
     const consistency = verifyOrderInventoryConsistency(finalized);
     if (!consistency.valid) {
@@ -287,8 +302,11 @@ async function finalizeSuccessfulPayment(
         const User = require('@/models/User').default;
         const userDoc = await User.findById(order.user);
         if (userDoc?.email) userEmail = userDoc.email;
-      } catch (lookupErr) {
-        console.warn('[payments][finalizeOrder] could not lookup user email', lookupErr);
+      } catch (lookupErr: unknown) {
+        console.warn(
+          '[payments][finalizeOrder] could not lookup user email',
+          getErrorMessage(lookupErr, 'lookup failed'),
+        );
       }
     }
 
@@ -297,21 +315,24 @@ async function finalizeSuccessfulPayment(
         email: userEmail,
         orderId: orderNumber || order.orderId || orderId,
         transactionId: txId || order.paymentInfo?.transactionId,
-        total: order.totalPrice || order.total || 0,
+        total: order.totalPrice || 0,
       });
     }
-  } catch (mailErr) {
-    console.error('[payments][finalizeOrder] confirmation email error', mailErr);
+  } catch (mailErr: unknown) {
+    console.error(
+      '[payments][finalizeOrder] confirmation email error',
+      getErrorMessage(mailErr, 'email failed'),
+    );
   }
 
   console.info('[payments][finalizeOrder] finalized order', orderId);
   return { ok: true, orderId };
 }
 
-async function finalizeFailedPayment(order: any, opts: { txId?: string }) {
+async function finalizeFailedPayment(order: FinalizableOrder, opts: { txId?: string }) {
   const { txId } = opts;
 
-  order.paymentInfo = order.paymentInfo || {};
+  order.paymentInfo = order.paymentInfo || { method: 'cod', status: 'pending' };
   order.paymentInfo.status = 'failed';
   if (txId) order.paymentInfo.transactionId = txId;
   order.status = 'cancelled';
@@ -320,8 +341,11 @@ async function finalizeFailedPayment(order: any, opts: { txId?: string }) {
     try {
       await restoreInventoryForOrder(order);
       order.inventoryAdjusted = false;
-    } catch (invErr) {
-      console.error('[payments][finalizeOrder] inventory restore failed', invErr);
+    } catch (invErr: unknown) {
+      console.error(
+        '[payments][finalizeOrder] inventory restore failed',
+        getErrorMessage(invErr, 'restore failed'),
+      );
     }
   }
 
@@ -340,8 +364,11 @@ async function finalizeFailedPayment(order: any, opts: { txId?: string }) {
         const User = require('@/models/User').default;
         const userDoc = await User.findById(order.user);
         if (userDoc?.email) userEmail = userDoc.email;
-      } catch (lookupErr) {
-        console.warn('[payments][finalizeOrder] could not lookup user email', lookupErr);
+      } catch (lookupErr: unknown) {
+        console.warn(
+          '[payments][finalizeOrder] could not lookup user email',
+          getErrorMessage(lookupErr, 'lookup failed'),
+        );
       }
     }
 
@@ -355,8 +382,11 @@ async function finalizeFailedPayment(order: any, opts: { txId?: string }) {
           <p>Please try again or contact support.</p>`,
       });
     }
-  } catch (mailErr) {
-    console.error('[payments][finalizeOrder] failure email error', mailErr);
+  } catch (mailErr: unknown) {
+    console.error(
+      '[payments][finalizeOrder] failure email error',
+      getErrorMessage(mailErr, 'email failed'),
+    );
   }
 
   console.info('[payments][finalizeOrder] marked failed for', order._id);

@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { resolveOrderPaymentAmount } from '@/lib/orders/payment-amount';
 import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
+import { getErrorMessage } from '@/lib/errors/message';
+import { parseRazorpayOrderPayload } from '@/lib/payments/validation';
+import type { RazorpayOrderCreateParams, RazorpayOrderResponse } from '@/lib/payments/types';
 
 const KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 export async function POST(req: Request) {
   try {
@@ -18,13 +21,15 @@ export async function POST(req: Request) {
     });
     if (limited) return limited;
 
-    const body = await req.json();
-    const { amount, currency = 'INR', receipt } = body;
-    if (!receipt) {
-      return NextResponse.json({ error: 'Missing order reference' }, { status: 400 });
+    const rawBody: unknown = await req.json();
+    const parsed = parseRazorpayOrderPayload(rawBody);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    const paymentAmount = await resolveOrderPaymentAmount(String(receipt), amount);
+    const { receipt, currency, amount } = parsed.value;
+
+    const paymentAmount = await resolveOrderPaymentAmount(receipt, amount);
     if (!paymentAmount.ok) {
       return NextResponse.json({ error: paymentAmount.error }, { status: paymentAmount.status });
     }
@@ -33,45 +38,49 @@ export async function POST(req: Request) {
 
     if (!KEY_ID || !KEY_SECRET) {
       console.warn('[razorpay][order] missing keys, returning dummy order for local dev');
-      // Return minimal fake order to allow frontend flows in dev
-      return NextResponse.json({ id: `order_fake_${Date.now()}`, amount: Math.round(orderAmount * 100), currency });
+      return NextResponse.json({
+        id: `order_fake_${Date.now()}`,
+        amount: Math.round(orderAmount * 100),
+        currency,
+      } satisfies RazorpayOrderResponse);
     }
 
     const rzp = new Razorpay({ key_id: String(KEY_ID), key_secret: String(KEY_SECRET) });
-    const options = {
-      amount: Math.round(orderAmount * 100), // amount in paise
+    const options: RazorpayOrderCreateParams = {
+      amount: Math.round(orderAmount * 100),
       currency,
-      receipt: receipt || `rcpt_${Date.now()}`,
+      receipt,
       payment_capture: 1,
     };
 
-    const order = await rzp.orders.create(options as any);
+    const order = (await rzp.orders.create(options)) as RazorpayOrderResponse;
 
-    // If client passed our internal receipt (merchant order id), store mapping to help webhooks
     try {
-      const receipt = options.receipt;
-      if (receipt) {
-        const OrderModel = require('@/models/Order').default;
-        const found = await OrderModel.findById(String(receipt));
-        if (found) {
-          found.paymentInfo = found.paymentInfo || {};
-          found.paymentInfo.method = 'razorpay';
-          found.paymentInfo.razorpayOrderId = order.id || order.id;
-          await found.save();
-        }
+      const OrderModel = require('@/models/Order').default;
+      const found = await OrderModel.findById(String(receipt));
+      if (found) {
+        found.paymentInfo = found.paymentInfo || {};
+        found.paymentInfo.method = 'razorpay';
+        found.paymentInfo.razorpayOrderId = order.id;
+        await found.save();
       }
-    } catch (e) {
-      console.warn('[razorpay][order] could not persist razorpay order id on merchant receipt', e);
+    } catch (persistErr: unknown) {
+      console.warn(
+        '[razorpay][order] could not persist razorpay order id on merchant receipt',
+        getErrorMessage(persistErr, 'persist failed'),
+      );
     }
 
     return NextResponse.json(order);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[razorpay][order] error creating order', err);
-    return NextResponse.json({ error: err?.message || 'Failed to create order' }, { status: 500 });
+    return NextResponse.json(
+      { error: getErrorMessage(err, 'Failed to create order') },
+      { status: 500 },
+    );
   }
 }
 
-// Helpful GET for sanity and OPTIONS for preflight/CORS
 export async function GET() {
   return NextResponse.json({ success: true, message: 'Razorpay order endpoint (POST) is alive' });
 }

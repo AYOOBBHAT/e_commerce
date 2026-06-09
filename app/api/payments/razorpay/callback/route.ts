@@ -1,43 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import Razorpay from 'razorpay';
 import { finalizeOrder } from '@/lib/finalizePayment';
+import { getErrorMessage } from '@/lib/errors/message';
+import { parseJsonBody } from '@/lib/payments/validation';
+import { extractRazorpayPaymentEntity } from '@/lib/payments/provider-response';
+import { isRecord } from '@/lib/payments/validation';
 
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
-const KEY_ID = process.env.RAZORPAY_KEY_ID;
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+function readWebhookEvent(body: unknown): string {
+  if (!isRecord(body)) return '';
+  const event = body.event ?? body.event_type;
+  return typeof event === 'string' ? event : '';
+}
 
 export async function POST(request: NextRequest) {
   try {
     const bodyText = await request.text();
-    const body = JSON.parse(bodyText);
+    const parsed = parseJsonBody(bodyText);
+    if (!parsed.ok) {
+      console.warn('[razorpay][callback] invalid JSON body');
+      return NextResponse.json({ success: true });
+    }
+    const body = parsed.value;
 
-    const headerSig = request.headers.get('x-razorpay-signature') || request.headers.get('x-razorpay-signature');
+    const headerSig =
+      request.headers.get('x-razorpay-signature') ||
+      request.headers.get('x-razorpay-signature');
 
     if (!headerSig || !WEBHOOK_SECRET) {
       console.warn('[razorpay][callback] missing signature or webhook secret');
-      return NextResponse.json({ success: true }); // return 200 to avoid retries
+      return NextResponse.json({ success: true });
     }
 
-    const expected = crypto.createHmac('sha256', String(WEBHOOK_SECRET)).update(bodyText).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', String(WEBHOOK_SECRET))
+      .update(bodyText)
+      .digest('hex');
     if (expected !== String(headerSig)) {
       console.warn('[razorpay][callback] invalid signature');
       return NextResponse.json({ success: true });
     }
 
-    // Determine event type and relevant ids
-    const event = body.event || body.event_type || '';
-    const paymentEntity = body?.payload?.payment?.entity || body?.payload?.payment || body?.payload?.payment || body?.payment || {};
-    const razorpayPaymentId = paymentEntity?.id || paymentEntity?.payment_id || '';
-    const razorpayOrderId = paymentEntity?.order_id || paymentEntity?.orderId || '';
+    const event = readWebhookEvent(body);
+    const { razorpayPaymentId, razorpayOrderId } = extractRazorpayPaymentEntity(body);
 
-    // Try to find merchant order id via payload (if order object has receipt or if we stored mapping earlier)
-    // We'll call the shared finalizer with CAPTURED for payment.captured
     if (event === 'payment.captured' || event === 'payment.authorized' || event === 'order.paid') {
       const result = await finalizeOrder({
         provider: 'razorpay',
-        merchantOrderId: String(razorpayOrderId),
-        txId: String(razorpayPaymentId),
+        merchantOrderId: razorpayOrderId,
+        txId: razorpayPaymentId,
         state: 'CAPTURED',
         providerResponse: body,
       });
@@ -50,8 +62,8 @@ export async function POST(request: NextRequest) {
     } else if (event === 'payment.failed') {
       await finalizeOrder({
         provider: 'razorpay',
-        merchantOrderId: String(razorpayOrderId),
-        txId: String(razorpayPaymentId),
+        merchantOrderId: razorpayOrderId,
+        txId: razorpayPaymentId,
         state: 'FAILED',
         providerResponse: body,
       });
@@ -60,8 +72,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    console.error('[razorpay][callback] error', err);
+  } catch (err: unknown) {
+    console.error('[razorpay][callback] error', getErrorMessage(err, 'callback error'));
     return NextResponse.json({ success: true });
   }
 }

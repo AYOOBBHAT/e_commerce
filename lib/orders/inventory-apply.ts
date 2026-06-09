@@ -80,7 +80,7 @@ export async function claimInventoryFinalizeLock(
 ): Promise<InventoryFinalizeClaim> {
   await connectToDatabase()
 
-  const existing = (await Order.findById(orderId).lean()) as OrderInventorySnapshot | null
+  const existing = await Order.findById(orderId).lean<OrderInventorySnapshot>()
   if (!existing) {
     return { claimed: false, reason: 'not_found' }
   }
@@ -113,7 +113,7 @@ export async function claimInventoryFinalizeLock(
   )
 
   if (!order) {
-    const current = (await Order.findById(orderId).lean()) as OrderInventorySnapshot | null
+    const current = await Order.findById(orderId).lean<OrderInventorySnapshot>()
     if (current && isOrderSuccessfullyFinalized(current)) {
       return { claimed: false, reason: 'already_finalized', order: current }
     }
