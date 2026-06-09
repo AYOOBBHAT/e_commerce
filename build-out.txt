@@ -1,0 +1,448 @@
+﻿
+> nextjs-ecommerce@0.1.0 build
+> next build
+
+   Creating an optimized production build...
+ Ô£ô Compiled successfully
+   Skipping linting
+   Checking validity of types...
+   Collecting page data...
+   Generating static pages (0/66)...
+node.exe : getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically 
+because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\ayoob bhat\AppData\Roa ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (getServerSessio...ic-server-error:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at k (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\admin\stats\route.js:1:2233)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45649
+    at C:\Users\ayoob bhat\Desktop\e_commerce\node_modules\next\dist\server\lib\trace\tracer.js:117:36
+    at NoopContextManager.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7057)
+    at ContextAPI.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:516)
+    at NoopTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18086)
+    at ProxyTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18847) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[auth][verify-email] error he [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at Object.ve [as staticGenerationBailout] (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:33468)
+    at i (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:38573)
+    at Object.get (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:38662)
+    at p (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\auth\verify-email\route.js:1:1012)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45649
+    at C:\Users\ayoob bhat\Desktop\e_commerce\node_modules\next\dist\server\lib\trace\tracer.js:117:36
+    at NoopContextManager.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7057)
+    at ContextAPI.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:516)
+    at NoopTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18086)
+    at ProxyTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18847) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Debug cookies error: he [Error]: Dynamic server usage: Page couldn't be rendered statically because it used `headers`. 
+See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:33468)
+    at Module.Se (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:33876)
+    at i (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:38462)
+    at Object.get (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:38662)
+    at n (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\debug\cookies\route.js:1:463)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45649
+    at C:\Users\ayoob bhat\Desktop\e_commerce\node_modules\next\dist\server\lib\trace\tracer.js:117:36
+    at NoopContextManager.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7057)
+    at ContextAPI.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:516)
+    at NoopTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18086) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at i (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\839.js:1:253)
+    at p (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\admin\users\route.js:1:1004)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45649
+    at C:\Users\ayoob bhat\Desktop\e_commerce\node_modules\next\dist\server\lib\trace\tracer.js:117:36
+    at NoopContextManager.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7057)
+    at ContextAPI.with (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:516)
+    at NoopTracer.startActiveSpan (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18086) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+
+   Generating static pages (16/66)
+
+[Redis] Connected to Upstash Redis
+[Redis] Connected to Upstash Redis
+Time 11.3144
+[MaintenanceMode] Ô£à Maintenance mode is ENABLED (from Redis)
+Time 10.9602
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at x (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\admin\orders\route.js:1:1664)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45643 {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at c (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\api\admin\audits\route.js:1:1043)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:1:45643 {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[Redis] Connected to Upstash Redis
+[Redis] Connected to Upstash Redis
+[Redis] Connected to Upstash Redis
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at d (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\app\admin\rate-limiter\page.js:1:6201)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processTimers (node:internal/timers:538:9)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412 {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processTimers (node:internal/timers:538:9)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412 {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[Redis] Connected to Upstash Redis
+[Redis] Connected to Upstash Redis
+
+   Generating static pages (32/66)
+
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+
+   Generating static pages (49/66)
+
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+getServerSession verify failed: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used 
+`cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at a (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\5020.js:1:1375)
+    at Object.u (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\7074.js:1:1458)
+    at y (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9542.js:1:1252)
+    at m (C:\Users\ayoob bhat\Desktop\e_commerce\.next\server\chunks\9735.js:1:3909)
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444498
+    at C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444630
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:444319)
+    at async C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443412
+    at async Promise.all (index 0)
+    at async ve (C:\Users\ayoob 
+bhat\Desktop\e_commerce\node_modules\next\dist\compiled\next-server\app-page-experimental.runtime.prod.js:1:443176) {
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+
+ Ô£ô Generating static pages (66/66)
+   Finalizing page optimization...
+
+Route (app)                              Size     First Load JS
+Ôöî ╬╗ /                                    4.44 kB         120 kB
+Ôö£ ╬╗ /_not-found                          0 B                0 B
+Ôö£ ╬╗ /account/orders                      2.01 kB        92.2 kB
+Ôö£ ╬╗ /account/settings                    5.1 kB         95.3 kB
+Ôö£ ╬╗ /admin                               106 kB          210 kB
+Ôö£ ╬╗ /admin/audits                        3.6 kB         93.8 kB
+Ôö£ ╬╗ /admin/categories                    7.25 kB         109 kB
+Ôö£ ╬╗ /admin/categories/[slug]/edit        3.92 kB         110 kB
+Ôö£ ╬╗ /admin/categories/new                3.94 kB         110 kB
+Ôö£ ╬╗ /admin/orders                        7.26 kB         133 kB
+Ôö£ ╬╗ /admin/orders/[orderId]              5.03 kB         107 kB
+Ôö£ ╬╗ /admin/products                      4.75 kB         136 kB
+Ôö£ ╬╗ /admin/products/[id]/edit            2.38 kB         107 kB
+Ôö£ ╬╗ /admin/products/new                  2.14 kB         107 kB
+Ôö£ ╬╗ /admin/rate-limiter                  2.01 kB        84.9 kB
+Ôö£ ╬╗ /admin/settings                      6.29 kB         104 kB
+Ôö£ ╬╗ /admin/users                         9.3 kB          129 kB
+Ôö£ ╬╗ /api/admin/audits                    0 B                0 B
+Ôö£ ╬╗ /api/admin/categories                0 B                0 B
+Ôö£ ╬╗ /api/admin/categories/[slug]         0 B                0 B
+Ôö£ ╬╗ /api/admin/categories/reorder        0 B                0 B
+Ôö£ ╬╗ /api/admin/orders                    0 B                0 B
+Ôö£ ╬╗ /api/admin/orders/[id]               0 B                0 B
+Ôö£ ╬╗ /api/admin/products                  0 B                0 B
+Ôö£ ╬╗ /api/admin/products/[id]             0 B                0 B
+Ôö£ ╬╗ /api/admin/rate-limiter              0 B                0 B
+Ôö£ ╬╗ /api/admin/settings                  0 B                0 B
+Ôö£ ╬╗ /api/admin/stats                     0 B                0 B
+Ôö£ ╬╗ /api/admin/users                     0 B                0 B
+Ôö£ ╬╗ /api/admin/users/[id]                0 B                0 B
+Ôö£ ╬╗ /api/admin/users/[id]/orders         0 B                0 B
+Ôö£ ╬╗ /api/auth/change-email/request       0 B                0 B
+Ôö£ ╬╗ /api/auth/change-email/verify        0 B                0 B
+Ôö£ ╬╗ /api/auth/forgot-password            0 B                0 B
+Ôö£ Ôùï /api/auth/google                     0 B                0 B
+Ôö£ ╬╗ /api/auth/google/callback            0 B                0 B
+Ôö£ ╬╗ /api/auth/login                      0 B                0 B
+Ôö£ ╬╗ /api/auth/logout                     0 B                0 B
+Ôö£ ╬╗ /api/auth/register                   0 B                0 B
+Ôö£ ╬╗ /api/auth/reset-password             0 B                0 B
+Ôö£ ╬╗ /api/auth/session                    0 B                0 B
+Ôö£ ╬╗ /api/auth/verify-email               0 B                0 B
+Ôö£ ╬╗ /api/cart/validate                   0 B                0 B
+Ôö£ ╬╗ /api/debug/cookies                   0 B                0 B
+Ôö£ Ôùï /api/maintenance-status              0 B                0 B
+Ôö£ ╬╗ /api/orders                          0 B                0 B
+Ôö£ ╬╗ /api/orders/[id]                     0 B                0 B
+Ôö£ ╬╗ /api/orders/public/[id]              0 B                0 B
+Ôö£ ╬╗ /api/payments/cashfree               0 B                0 B
+Ôö£ ╬╗ /api/payments/cashfree/callback      0 B                0 B
+Ôö£ ╬╗ /api/payments/phonepe                0 B                0 B
+Ôö£ ╬╗ /api/payments/phonepe/callback       0 B                0 B
+Ôö£ ╬╗ /api/payments/phonepe/prod-test      0 B                0 B
+Ôö£ ╬╗ /api/payments/razorpay               0 B                0 B
+Ôö£ ╬╗ /api/payments/razorpay/callback      0 B                0 B
+Ôö£ ╬╗ /api/payments/razorpay/order         0 B                0 B
+Ôö£ ╬╗ /api/payments/razorpay/verify        0 B                0 B
+Ôö£ ╬╗ /api/products                        0 B                0 B
+Ôö£ ╬╗ /api/products/search                 0 B                0 B
+Ôö£ Ôùï /api/settings                        0 B                0 B
+Ôö£ Ôùï /api/test-maintenance                0 B                0 B
+Ôö£ Ôùï /api/test-redis                      0 B                0 B
+Ôö£ ╬╗ /api/users/[id]                      0 B                0 B
+Ôö£ ╬╗ /cart                                9.66 kB         123 kB
+Ôö£ ╬╗ /category/[category]                 2.33 kB         147 kB
+Ôö£ ╬╗ /checkout                            8.13 kB         117 kB
+Ôö£ ╬╗ /forgot-password                     3.9 kB          141 kB
+Ôö£ ╬╗ /login                               4.63 kB         142 kB
+Ôö£ ╬╗ /maintenance                         184 B          89.8 kB
+Ôö£ ╬╗ /order-failed                        2.13 kB         103 kB
+Ôö£ ╬╗ /order-processing                    4.07 kB          87 kB
+Ôö£ ╬╗ /order-success                       4.4 kB          111 kB
+Ôö£ ╬╗ /orders                              1.84 kB          92 kB
+Ôö£ ╬╗ /orders/[orderId]                    2.26 kB        97.7 kB
+Ôö£ ╬╗ /products                            2.33 kB         147 kB
+Ôö£ ╬╗ /products/[slug]                     7.63 kB         105 kB
+Ôö£ ╬╗ /products/featured                   1.13 kB         117 kB
+Ôö£ ╬╗ /quick-links/about-us                162 B          83.1 kB
+Ôö£ ╬╗ /quick-links/faq                     3.38 kB        97.3 kB
+Ôö£ ╬╗ /quick-links/privacy-policy          162 B          83.1 kB
+Ôö£ ╬╗ /quick-links/refund_policy           162 B          83.1 kB
+Ôö£ ╬╗ /quick-links/shipping-returns        162 B          83.1 kB
+Ôö£ ╬╗ /quick-links/terms                   162 B          83.1 kB
+Ôö£ ╬╗ /register                            4.23 kB         141 kB
+Ôö£ ╬╗ /reset-password                      3.72 kB         136 kB
+Ôöö ╬╗ /search                              4.04 kB         120 kB
++ First Load JS shared by all            82.9 kB
+  Ôö£ chunks/1179-4e60fca2c88cc5c3.js      27.2 kB
+  Ôö£ chunks/bf6a786c-feded1b4972f1d21.js  53.7 kB
+  Ôö£ chunks/main-app-6328371bddeca6bb.js  228 B
+  Ôöö chunks/webpack-33fe1eea6e6b7a27.js   1.79 kB
+
+
+ãÆ Middleware                             73.4 kB
+
+╬╗  (Server)  server-side renders at runtime (uses getInitialProps or getServerSideProps)
+Ôùï  (Static)  automatically rendered as static HTML (uses no initial props)
+

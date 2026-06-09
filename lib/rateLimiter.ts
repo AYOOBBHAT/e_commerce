@@ -378,7 +378,7 @@ export async function clearRateLimiterKey(k: string) {
       keysToDelete.add(k.replace('rl:combo:block:', 'rl:combo:fail:'))
     }
 
-    for (const key of keysToDelete) {
+    for (const key of Array.from(keysToDelete)) {
       await redis.del(key)
       await unindexRedisKey(key)
     }

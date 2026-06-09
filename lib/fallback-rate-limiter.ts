@@ -43,7 +43,7 @@ function evictOldestKey(): void {
   let oldestKey: string | null = null
   let oldestSeen = Infinity
 
-  for (const [key, entry] of store) {
+  for (const [key, entry] of Array.from(store.entries())) {
     if (entry.lastSeen < oldestSeen) {
       oldestSeen = entry.lastSeen
       oldestKey = key
@@ -60,8 +60,8 @@ function sweepStaleEntries(now: number, maxWindowMs: number): void {
   lastSweepAt = now
 
   const cutoff = now - maxWindowMs
-  for (const [key, entry] of store) {
-    entry.timestamps = entry.timestamps.filter((ts) => ts > cutoff)
+  for (const [key, entry] of Array.from(store.entries())) {
+    entry.timestamps = entry.timestamps.filter((ts: number) => ts > cutoff)
     if (entry.timestamps.length === 0) {
       store.delete(key)
     }
