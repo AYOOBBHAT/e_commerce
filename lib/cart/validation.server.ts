@@ -65,9 +65,8 @@ function isLineAvailable(product: ProductDoc, variant: VariantDoc | null) {
   return true
 }
 
-function roundMoney(value: number) {
-  return Math.round(value * 100) / 100
-}
+import { getSettings } from '@/lib/settings'
+import { getShippingDisplay, roundMoney } from '@/lib/shipping'
 
 export async function validateCartItems(
   payload: CartItemPayload[],
@@ -161,6 +160,12 @@ export async function validateCartItems(
     items.reduce((sum, item) => sum + item.price * item.quantity, 0),
   )
 
+  const settings = await getSettings()
+  const shippingQuote = getShippingDisplay(subtotal, {
+    freeShippingThreshold: settings.shipping.freeShippingThreshold,
+    defaultRate: settings.shipping.defaultRate,
+  })
+
   let globalMessage: string | undefined
   if (removedCount > 0) {
     globalMessage =
@@ -170,6 +175,11 @@ export async function validateCartItems(
   return {
     items,
     subtotal,
+    shippingAmount: shippingQuote.shippingAmount,
+    freeShippingApplied: shippingQuote.freeShippingApplied,
+    shippingThresholdUsed: shippingQuote.shippingThresholdUsed,
+    shippingLabel: shippingQuote.shippingLabel,
+    total: shippingQuote.orderTotal,
     checkoutBlocked,
     removedCount,
     globalMessage,
@@ -195,9 +205,15 @@ export async function validateOrderFromClient(
     throw new Error('Cart is empty.')
   }
 
+  const settings = await getSettings()
+  const shippingQuote = getShippingDisplay(validated.subtotal, {
+    freeShippingThreshold: settings.shipping.freeShippingThreshold,
+    defaultRate: settings.shipping.defaultRate,
+  })
+
   if (
     clientTotal != null &&
-    Math.abs(roundMoney(clientTotal) - validated.subtotal) > 0.01
+    Math.abs(roundMoney(clientTotal) - shippingQuote.orderTotal) > 0.01
   ) {
     throw new Error('Cart total mismatch. Please refresh your cart and try again.')
   }
@@ -213,7 +229,11 @@ export async function validateOrderFromClient(
 
   return {
     orderItems,
-    total: validated.subtotal,
+    subtotal: validated.subtotal,
+    shippingAmount: shippingQuote.shippingAmount,
+    freeShippingApplied: shippingQuote.freeShippingApplied,
+    shippingThresholdUsed: shippingQuote.shippingThresholdUsed,
+    total: shippingQuote.orderTotal,
   }
 }
 

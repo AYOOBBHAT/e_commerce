@@ -12,6 +12,25 @@ import {
 } from '@/lib/cart/validation.server';
 import { verifyOrderInventoryConsistency } from '@/lib/orders/inventory-consistency';
 import { generateIdempotencyKey } from '@/lib/utils/idempotency';
+import {
+  claimIdempotencyKey,
+  finalizeIdempotencyKey,
+  releaseIdempotencyKey,
+  findOrderByIdempotencyKey,
+  isDuplicateKeyError,
+} from '@/lib/orders/idempotency';
+
+function cachedOrderResponse(existing: {
+  orderId?: string;
+  _id: { toString(): string };
+}) {
+  return NextResponse.json({
+    success: true,
+    orderId: existing.orderId || existing._id.toString(),
+    id: existing._id.toString(),
+    fromCache: true,
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +49,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let codInventoryResults: InventoryAdjustResult[] = [];
+  let effectiveIdempotencyKey: string | null = null;
+  let claimHeld = false;
 
   try {
     const { rateLimit, getClientIdentifier } = await import('@/lib/api-rate-limiter');
@@ -40,6 +61,8 @@ export async function POST(request: NextRequest) {
       windowMs: 60 * 1000,
       maxRequests: 10,
       keyPrefix: 'order:create',
+      critical: true,
+      fallbackMaxRequests: 5,
     });
 
     if (!rateLimitResult.allowed) {
@@ -85,9 +108,10 @@ export async function POST(request: NextRequest) {
     }
 
     const orderItems = validatedOrder.orderItems;
+    const validatedSubtotal = validatedOrder.subtotal;
     const validatedTotal = validatedOrder.total;
 
-    const effectiveIdempotencyKey =
+    effectiveIdempotencyKey =
       idempotencyKey ||
       generateIdempotencyKey({
         items: normalizedItems.map((item: any) => ({
@@ -99,20 +123,26 @@ export async function POST(request: NextRequest) {
         phone,
       });
 
-    const { checkIdempotency, storeIdempotency } = await import('@/lib/actions/orders');
-    const existingOrderId = await checkIdempotency(effectiveIdempotencyKey);
-    if (existingOrderId) {
-      const existingOrder = await Order.findById(existingOrderId);
+    const claim = await claimIdempotencyKey(effectiveIdempotencyKey);
+    if (claim.status === 'existing') {
+      const existingOrder = await Order.findById(claim.mongoId);
       if (existingOrder) {
-        return NextResponse.json({
-          success: true,
-          orderId: existingOrder.orderId || existingOrder._id.toString(),
-          id: existingOrder._id.toString(),
-          fromCache: true,
-        });
+        return cachedOrderResponse(existingOrder);
       }
     }
+    if (claim.status === 'pending') {
+      return NextResponse.json(
+        { error: 'Order request already in progress. Please retry shortly.' },
+        {
+          status: 409,
+          headers: {
+            'Retry-After': String(claim.retryAfterSeconds),
+          },
+        },
+      );
+    }
 
+    claimHeld = true;
     const merchantOrderId = 'ORD-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 
     if (paymentMethod === 'cod') {
@@ -120,6 +150,8 @@ export async function POST(request: NextRequest) {
         codInventoryResults = await decrementInventoryForOrderItems(orderItems);
       } catch (invErr: any) {
         console.error('[orders][create] COD inventory decrement failed', invErr);
+        await releaseIdempotencyKey(effectiveIdempotencyKey);
+        claimHeld = false;
         return NextResponse.json(
           { error: invErr?.message || 'Insufficient stock for one or more items.' },
           { status: 409 },
@@ -134,11 +166,16 @@ export async function POST(request: NextRequest) {
 
     const orderPayload: any = {
       orderId: merchantOrderId,
+      idempotencyKey: effectiveIdempotencyKey,
       user: session?.userId || undefined,
       customer: session?.userId ? undefined : { name, email, phone },
       shippingAddress: shippingAddressValue,
       items: orderItems,
       orderItems,
+      subtotal: validatedSubtotal,
+      shippingAmount: validatedOrder.shippingAmount,
+      freeShippingApplied: validatedOrder.freeShippingApplied,
+      shippingThresholdUsed: validatedOrder.shippingThresholdUsed,
       total: validatedTotal,
       totalPrice: validatedTotal,
       paymentMethod,
@@ -166,17 +203,31 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+
+      if (isDuplicateKeyError(createErr) && effectiveIdempotencyKey) {
+        const existing = await findOrderByIdempotencyKey(effectiveIdempotencyKey);
+        if (existing) {
+          await finalizeIdempotencyKey(effectiveIdempotencyKey, existing._id.toString());
+          claimHeld = false;
+          return cachedOrderResponse(existing);
+        }
+      }
+
+      await releaseIdempotencyKey(effectiveIdempotencyKey);
+      claimHeld = false;
       throw createErr;
     }
+
+    await finalizeIdempotencyKey(effectiveIdempotencyKey, order._id.toString());
+    claimHeld = false;
 
     console.info('[orders][create] created order', {
       orderId: order.orderId,
       _id: order._id,
       user: order.user,
       customer: order.customer,
+      paymentMethod,
     });
-
-    await storeIdempotency(effectiveIdempotencyKey, order._id.toString());
 
     if (paymentMethod === 'cod') {
       const consistency = verifyOrderInventoryConsistency(order.toObject?.() ?? order);
@@ -253,6 +304,9 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
+    if (claimHeld && effectiveIdempotencyKey) {
+      await releaseIdempotencyKey(effectiveIdempotencyKey);
+    }
     console.error('Order creation error:', error);
     return NextResponse.json({ error: 'Order creation failed' }, { status: 500 });
   }

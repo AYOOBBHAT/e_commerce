@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProducts } from '@/lib/actions/products';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 
 // Optimized search endpoint with caching
 export const dynamic = 'force-dynamic';
@@ -7,6 +8,14 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    const limited = await enforceApiRateLimit(request, {
+      windowMs: 60 * 1000,
+      maxRequests: 60,
+      keyPrefix: 'products:search',
+      limitHeader: '60',
+    });
+    if (limited) return limited;
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim() || '';
     const category = searchParams.get('category');

@@ -32,6 +32,11 @@ export type CartItemMeta = {
 export type CartValidationResponse = {
   items: CartItem[]
   subtotal: number
+  shippingAmount: number
+  freeShippingApplied: boolean
+  shippingThresholdUsed: number
+  shippingLabel: string
+  total: number
   checkoutBlocked: boolean
   removedCount: number
   globalMessage?: string
@@ -58,5 +63,9 @@ export type ValidatedOrder = {
     quantity: number
     variantLabel?: string
   }>
+  subtotal: number
+  shippingAmount: number
+  freeShippingApplied: boolean
+  shippingThresholdUsed: number
   total: number
 }

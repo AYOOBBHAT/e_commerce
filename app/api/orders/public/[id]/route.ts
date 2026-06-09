@@ -36,6 +36,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       orderNumber: order.orderNumber,
       totalPrice: order.totalPrice,
       total: order.totalPrice,
+      subtotal: order.subtotal,
+      shippingAmount: order.shippingAmount ?? 0,
+      freeShippingApplied: order.freeShippingApplied ?? false,
+      shippingThresholdUsed: order.shippingThresholdUsed ?? 0,
       paymentMethod: order.paymentInfo?.method,
       paymentInfo: {
         status: order.paymentInfo?.status,

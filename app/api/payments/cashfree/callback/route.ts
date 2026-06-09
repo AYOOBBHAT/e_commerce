@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { finalizeOrder } from '@/lib/finalizePayment';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 
 const CASHFREE_SECRET = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
@@ -9,6 +10,16 @@ const API_VERSION = process.env.CASHFREE_API_VERSION || '2022-09-01';
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await enforceApiRateLimit(request, {
+      windowMs: 60 * 1000,
+      maxRequests: 120,
+      keyPrefix: 'payments:cashfree:callback',
+      limitHeader: '120',
+      critical: true,
+      fallbackMaxRequests: 30,
+    });
+    if (limited) return limited;
+
     const bodyText = await request.text();
     const body = JSON.parse(bodyText);
 

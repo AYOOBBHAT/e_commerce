@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
-import { SITE_NAME } from '@/lib/constants';
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider';
 
 export default function OrderProcessingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clearCart } = useCart();
+  const { storeName } = useStorefrontSettings();
   const orderId = searchParams.get('orderId');
   const [status, setStatus] = useState<string | null>(null);
   const [message, setMessage] = useState<string>('Processing your payment...');
@@ -59,7 +60,7 @@ export default function OrderProcessingPage() {
       <div className="container mx-auto max-w-lg">
         <div className="rounded-2xl border border-stone-200/80 bg-white p-6 text-center shadow-sm sm:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
-            {SITE_NAME}
+            {storeName}
           </p>
           <h1 className="mt-1.5 text-2xl font-bold text-stone-900 sm:text-3xl">
             Processing your payment

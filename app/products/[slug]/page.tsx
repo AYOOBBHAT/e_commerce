@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/lib/actions/products';
+import { getStorefrontSettings } from '@/lib/storefront-settings';
 import ProductImageGallery from '@/components/product/ProductImageGallery';
 import ProductBuyBox from '@/components/product/pdp/ProductBuyBox';
 import { generateProductStructuredData, generateBreadcrumbStructuredData } from '@/lib/structured-data';
@@ -15,7 +16,10 @@ type Props = {
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourstore.com';
 
 export async function generateMetadata({ params }: Props) {
-  const product = await getProductBySlug(params.slug);
+  const [product, { storeName }] = await Promise.all([
+    getProductBySlug(params.slug),
+    getStorefrontSettings(),
+  ]);
   
   if (!product) {
     return {
@@ -27,13 +31,13 @@ export async function generateMetadata({ params }: Props) {
   const mainImage = product.images?.[0] || '';
 
   return {
-    title: `${product.name} | ${process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store'}`,
+    title: `${product.name} | ${storeName}`,
     description: product.description.substring(0, 160),
     openGraph: {
       title: product.name,
       description: product.description.substring(0, 160),
       url: productUrl,
-      siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
+      siteName: storeName,
       images: product.images && product.images.length > 0 
         ? product.images.map((img: string) => ({ url: img, width: 1200, height: 630 }))
         : [],
@@ -53,7 +57,10 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = params;
-  const product = await getProductBySlug(slug);
+  const [product, { storeName }] = await Promise.all([
+    getProductBySlug(slug),
+    getStorefrontSettings(),
+  ]);
 
   if (!product) {
     return notFound();
@@ -74,7 +81,8 @@ export default async function ProductPage({ params }: Props) {
       category: product.category,
       ratings: product.ratings,
     },
-    baseUrl
+    baseUrl,
+    storeName,
   );
 
   const breadcrumbData = generateBreadcrumbStructuredData([

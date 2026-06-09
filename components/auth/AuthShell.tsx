@@ -1,7 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Loader2, ShoppingBag } from 'lucide-react'
-import { SITE_NAME } from '@/lib/constants'
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider'
 import { cn } from '@/lib/utils'
 
 type AuthShellProps = {
@@ -11,6 +13,8 @@ type AuthShellProps = {
 }
 
 export function AuthShell({ title, subtitle, children }: AuthShellProps) {
+  const { storeName } = useStorefrontSettings()
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#FAF7F2] px-4 py-10">
       <div className="w-full max-w-md">
@@ -18,14 +22,14 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
           <div className="relative mb-4 h-14 w-14 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
             <Image
               src="https://res.cloudinary.com/dfocwbzzo/image/upload/v1763995872/ZESCOH_LOGO_o7pz0s.jpg"
-              alt="ZeeShaEla & Co. logo"
+              alt={`${storeName} logo`}
               fill
               sizes="56px"
               className="object-cover"
             />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
-            {SITE_NAME}
+            {storeName}
           </p>
           <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-stone-900">
             {title}

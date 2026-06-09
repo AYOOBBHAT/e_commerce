@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/components/CartProvider'
 import { useRouter } from 'next/navigation'
@@ -26,6 +26,8 @@ import {
   isCheckoutFormComplete,
   type CheckoutFormState,
 } from '@/lib/checkout-content'
+import { getShippingDisplay } from '@/lib/shipping'
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider'
 
 const defaultPaymentMethods: Record<string, boolean> = {
   phonepe: true,
@@ -100,7 +102,17 @@ export default function CheckoutPage() {
     submitInFlightRef.current = false
   }, [])
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const { shipping } = useStorefrontSettings()
+
+  const subtotal = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cart],
+  )
+  const quote = useMemo(
+    () => getShippingDisplay(subtotal, shipping),
+    [subtotal, shipping],
+  )
+  const orderTotal = quote.orderTotal
   const isProcessing =
     isLoading || razorpayLoading || phonepeLoading || cashfreeLoading
   const checkoutDisabled = checkoutBlocked || !isCheckoutFormComplete(form)
@@ -115,7 +127,7 @@ export default function CheckoutPage() {
       router.push('/cart')
       return null
     }
-    return result.subtotal
+    return result.total
   }, [router, syncCart])
 
   useEffect(() => {
@@ -189,7 +201,7 @@ export default function CheckoutPage() {
       alert('Please fill in all required fields before proceeding.')
       return
     }
-    if (!total || total <= 0) {
+    if (!orderTotal || orderTotal <= 0) {
       endSubmit()
       alert('Invalid cart total.')
       return
@@ -321,7 +333,7 @@ export default function CheckoutPage() {
       alert('Razorpay is currently disabled.')
       return
     }
-    if (!isCheckoutFormComplete(form) || !cart.length || total <= 0) {
+    if (!isCheckoutFormComplete(form) || !cart.length || orderTotal <= 0) {
       endSubmit()
       alert('Please complete all fields and ensure your cart is valid.')
       return
@@ -736,14 +748,14 @@ export default function CheckoutPage() {
 
           <aside className="lg:col-span-5">
             <div className="lg:sticky lg:top-24">
-              <CheckoutOrderSummary cart={cart} total={total} />
+              <CheckoutOrderSummary cart={cart} subtotal={subtotal} />
             </div>
           </aside>
         </div>
       </div>
 
       <CheckoutStickyBar
-        total={total}
+        total={orderTotal}
         ctaLabel={ctaLabel}
         isLoading={isProcessing}
         disabled={checkoutDisabled}

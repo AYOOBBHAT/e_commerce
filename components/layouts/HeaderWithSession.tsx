@@ -6,9 +6,13 @@ import type { NavCategory } from '@/lib/category-types';
 
 type HeaderWithSessionProps = {
   navCategories: NavCategory[];
+  storeName: string;
 };
 
-export default function HeaderWithSession({ navCategories }: HeaderWithSessionProps) {
+export default function HeaderWithSession({
+  navCategories,
+  storeName,
+}: HeaderWithSessionProps) {
   const { user } = useSession();
   const headerUser = user
     ? {
@@ -17,5 +21,5 @@ export default function HeaderWithSession({ navCategories }: HeaderWithSessionPr
         role: user.role,
       }
     : null;
-  return <Header user={headerUser} navCategories={navCategories} />;
+  return <Header user={headerUser} navCategories={navCategories} storeName={storeName} />;
 }

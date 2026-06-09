@@ -35,7 +35,7 @@ export function generateProductStructuredData(product: {
   slug: string;
   category?: string;
   ratings?: Array<{ rating: number }>;
-}, baseUrl: string): ProductStructuredData {
+}, baseUrl: string, brandName?: string): ProductStructuredData {
   const productUrl = `${baseUrl}/products/${product.slug}`;
   const mainImage = product.images?.[0] || '';
   const allImages = product.images || [mainImage];
@@ -59,7 +59,7 @@ export function generateProductStructuredData(product: {
     image: allImages.length === 1 ? allImages[0] : allImages,
     brand: {
       '@type': 'Brand',
-      name: process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
+      name: brandName || process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
     },
     offers: {
       '@type': 'Offer',
@@ -88,26 +88,35 @@ export function generateBreadcrumbStructuredData(items: Array<{ name: string; ur
   };
 }
 
-export function generateOrganizationStructuredData(baseUrl: string) {
+export function generateOrganizationStructuredData(
+  baseUrl: string,
+  store?: { storeName?: string; storeEmail?: string },
+) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
+    name: store?.storeName || process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
     url: baseUrl,
     logo: `${baseUrl}/logo.png`,
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
-      email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@example.com',
+      email:
+        store?.storeEmail ||
+        process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
+        'support@example.com',
     },
   };
 }
 
-export function generateWebsiteStructuredData(baseUrl: string) {
+export function generateWebsiteStructuredData(
+  baseUrl: string,
+  store?: { storeName?: string },
+) {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
+    name: store?.storeName || process.env.NEXT_PUBLIC_SITE_NAME || 'E-commerce Store',
     url: baseUrl,
     potentialAction: {
       '@type': 'SearchAction',

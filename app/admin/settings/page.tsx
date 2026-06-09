@@ -283,7 +283,7 @@ export default function AdminSettings() {
             <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-b border-gray-200 dark:border-gray-800">
               <CardTitle className="text-xl text-gray-900 dark:text-gray-100">Shipping Settings</CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
-                Configure shipping rates and zones
+                Free shipping threshold and default rate drive cart, checkout, and order totals.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 bg-white dark:bg-gray-900">
@@ -293,6 +293,7 @@ export default function AdminSettings() {
                   <Input
                     id="freeShipping"
                     type="number"
+                    min={0}
                     placeholder="Enter amount"
                     value={settings.shipping.freeShippingThreshold}
                     onChange={(e) => setSettings({ 
@@ -311,6 +312,7 @@ export default function AdminSettings() {
                   <Input
                     id="defaultRate"
                     type="number"
+                    min={0}
                     placeholder="Enter amount"
                     value={settings.shipping.defaultRate}
                     onChange={(e) => setSettings({ 
@@ -335,10 +337,13 @@ export default function AdminSettings() {
             <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border-b border-gray-200 dark:border-gray-800">
               <CardTitle className="text-xl text-gray-900 dark:text-gray-100">Notification Settings</CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
-                Configure email notifications for orders and inventory
+                Configure transactional email notifications. These settings are not currently applied to the storefront.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 bg-white dark:bg-gray-900">
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                Not currently applied to storefront — controls backend email delivery only.
+              </p>
               <form onSubmit={(e) => handleSaveSettings(e, 'notifications')} className="space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -379,6 +384,7 @@ export default function AdminSettings() {
                     <div className="space-y-0.5">
                       <Label htmlFor="inventory" className="font-medium cursor-pointer text-gray-900 dark:text-gray-100">Low Inventory Alerts</Label>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Get notified when stock is low</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">Not currently applied to storefront</p>
                     </div>
                     <Switch 
                       id="inventory" 
@@ -396,6 +402,7 @@ export default function AdminSettings() {
                     <div className="space-y-0.5">
                       <Label htmlFor="marketing" className="font-medium cursor-pointer text-gray-900 dark:text-gray-100">Marketing Emails</Label>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Send promotional emails to customers</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">Not currently applied to storefront</p>
                     </div>
                     <Switch 
                       id="marketing" 

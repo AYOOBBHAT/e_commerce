@@ -119,9 +119,9 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
     }
     
     // Update fields
-    if (updates.storeName !== undefined) settingsDoc.storeName = updates.storeName;
-    if (updates.storeEmail !== undefined) settingsDoc.storeEmail = updates.storeEmail;
-    if (updates.storePhone !== undefined) settingsDoc.storePhone = updates.storePhone;
+    if (updates.storeName !== undefined) settingsDoc.storeName = updates.storeName.trim();
+    if (updates.storeEmail !== undefined) settingsDoc.storeEmail = updates.storeEmail.trim();
+    if (updates.storePhone !== undefined) settingsDoc.storePhone = updates.storePhone.trim();
     if (updates.maintenanceMode !== undefined) {
       settingsDoc.maintenanceMode = updates.maintenanceMode;
       // Sync maintenance mode to Redis immediately (BEFORE saving to ensure it's ready)

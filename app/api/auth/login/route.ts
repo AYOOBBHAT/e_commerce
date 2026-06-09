@@ -5,6 +5,7 @@ import { connectToDatabase } from '@/lib/db';
 import User from '@/models/User';
 import { encrypt, setAuthCookie } from '@/lib/auth';
 import { isBlocked, recordFailedAttempt, resetAttempts, isBlockedComposite, recordFailedAttemptComposite, resetAttemptsComposite } from '@/lib/rateLimiter';
+import { getClientIp } from '@/lib/client-ip';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -26,8 +27,7 @@ export async function POST(request: Request) {
     const { email, password } = validation.data;
 
     // Determine client IP for rate-limiting purposes
-    const xf = (request as any).headers?.get ? (request as any).headers.get('x-forwarded-for') : null;
-    const ip = xf ? xf.split(',')[0].trim() : (request as any).ip || 'unknown';
+    const ip = getClientIp(request);
     const ipKey = `login_ip_${ip}`;
     const emailKey = `login_email_${email}`;
 

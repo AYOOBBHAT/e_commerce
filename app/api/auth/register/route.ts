@@ -4,8 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import User from '@/models/User';
 import { z } from 'zod';
-import { isBlocked, recordFailedAttempt } from '@/lib/rateLimiter';
-
+import { getClientIp } from '@/lib/client-ip';
+import {
+  isBlockedScope,
+  recordScopeAttempt,
+} from '@/lib/rateLimiter';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -19,39 +22,40 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+
   try {
     await connectToDatabase();
-    
+
     const body = await request.json();
     const validation = registerSchema.safeParse(body);
-    
+
     if (!validation.success) {
+      await recordScopeAttempt('register', ip);
       return NextResponse.json(
         { error: validation.error.errors[0].message },
         { status: 400 }
       );
     }
-    
+
     const { name, email, password } = validation.data;
 
-    // Basic rate limiting by IP to prevent mass registrations
-    const xf = request.headers.get('x-forwarded-for');
-    const ip = xf ? xf.split(',')[0].trim() : 'unknown';
-    const ipKey = `register_ip_${ip}`;
-    if (await isBlocked(ipKey)) {
-      return NextResponse.json({ error: 'Too many registration attempts, try later' }, { status: 429 });
+    if (await isBlockedScope('register', ip, email)) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts, try later' },
+        { status: 429 },
+      );
     }
-    
-    // Check if user already exists
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      await recordScopeAttempt('register', ip, email);
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
-    
-    // Create new user (password will be hashed by model pre-save hook)
+
     const user = await User.create({
       name,
       email,
@@ -59,7 +63,6 @@ export async function POST(request: NextRequest) {
       emailVerified: false,
     });
 
-    // Send verification email (best effort)
     try {
       const { createShortLivedToken } = await import('@/lib/auth');
       const token = await createShortLivedToken({ userId: user._id.toString(), action: 'verify-email' }, '1d');
@@ -76,7 +79,6 @@ export async function POST(request: NextRequest) {
       console.warn('Failed to send verification email', emailErr);
     }
 
-    // Send marketing/welcome email if enabled (best effort, don't fail registration)
     try {
       const { sendMarketingEmail } = await import('@/lib/email-service');
       await sendMarketingEmail({
@@ -86,11 +88,12 @@ export async function POST(request: NextRequest) {
       });
     } catch (marketingErr) {
       console.warn('Failed to send marketing email', marketingErr);
-      // Don't fail registration if marketing email fails
     }
-    
+
+    await recordScopeAttempt('register', ip, email);
+
     return NextResponse.json(
-      { 
+      {
         message: 'User registered successfully',
         user: {
           id: user._id,
@@ -103,9 +106,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Registration error:', error);
-
-    // record failed registration attempt for rate limiting purposes
-    try { await recordFailedAttempt(`register_ip_${request.headers.get('x-forwarded-for') || 'unknown'}`); } catch (e) {}
+    try {
+      await recordScopeAttempt('register', ip);
+    } catch (e) {
+      console.warn('[register] rate limit record failed', e);
+    }
 
     return NextResponse.json(
       { error: 'Something went wrong' },

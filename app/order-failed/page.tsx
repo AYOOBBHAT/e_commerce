@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AlertCircle, ArrowRight, Loader2, RotateCcw, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SITE_NAME } from '@/lib/constants'
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider'
 import CheckoutTrustStrip from '@/components/checkout/CheckoutTrustStrip'
 
 const FAILURE_MESSAGES: Record<string, string> = {
@@ -49,6 +49,8 @@ export default function OrderFailedPage() {
       : reasonParam?.replace(/_/g, ' ') ||
         'We could not confirm your payment for this order.')
 
+  const { storeName } = useStorefrontSettings()
+
   const displayOrderId = order?.orderId || orderId
 
   return (
@@ -60,7 +62,7 @@ export default function OrderFailedPage() {
           </div>
 
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
-            {SITE_NAME}
+            {storeName}
           </p>
           <h1 className="mt-1.5 text-2xl font-bold text-stone-900 sm:text-3xl">
             Payment not completed

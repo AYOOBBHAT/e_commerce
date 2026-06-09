@@ -1,6 +1,9 @@
 export const FOOTER_BRAND_TAGLINE =
   'Premium Kashmir staples, handcrafted with care.'
 
+export const FOOTER_ADDRESS =
+  'Baagatpora Handwara, Shopping District Kupwara, Jammu and Kashmir, India 193221'
+
 export const FOOTER_QUICK_LINKS = [
   { href: '/quick-links/about-us', label: 'About Us' },
   { href: '/quick-links/faq', label: 'FAQ' },
@@ -12,13 +15,6 @@ export const FOOTER_POLICY_LINKS = [
   { href: '/quick-links/refund_policy', label: 'Refund Policy' },
   { href: '/quick-links/shipping-returns', label: 'Shipping & Returns' },
 ] as const
-
-export const FOOTER_CONTACT = {
-  address:
-    'Baagatpora Handwara, Shopping District Kupwara, Jammu and Kashmir, India 193221',
-  phones: ['+919469030389', '+919797435756'],
-  email: 'zeeshaela@zescohnuts.com',
-} as const
 
 export const FOOTER_SOCIAL = [
   {

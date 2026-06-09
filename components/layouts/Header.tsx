@@ -25,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { SITE_NAME } from '@/lib/constants';
 import type { NavCategory } from '@/lib/category-types';
 import { useSession } from '../SessionProvider';
 import { useCart } from '../CartProvider';
@@ -38,9 +37,10 @@ interface HeaderProps {
     role: string;
   } | null;
   navCategories: NavCategory[];
+  storeName: string;
 }
 
-export default function Header({ user, navCategories }: HeaderProps) {
+export default function Header({ user, navCategories, storeName }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -143,7 +143,7 @@ export default function Header({ user, navCategories }: HeaderProps) {
                 priority
               />
             </div>
-            <span className="text-lg sm:text-xl font-bold text-stone-900 truncate">{SITE_NAME}</span>
+            <span className="text-lg sm:text-xl font-bold text-stone-900 truncate">{storeName}</span>
           </Link>
 
           {/* Desktop Navigation */}

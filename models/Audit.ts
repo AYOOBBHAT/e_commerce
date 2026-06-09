@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAudit extends Document {
   adminId: mongoose.Types.ObjectId | string;
-  orderId: mongoose.Types.ObjectId | string;
+  orderId?: mongoose.Types.ObjectId | string;
   action: string;
   before?: string;
   after?: string;
@@ -13,7 +13,7 @@ export interface IAudit extends Document {
 const auditSchema = new Schema<IAudit>(
   {
     adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+    orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: false },
     action: { type: String, required: true },
     before: { type: String },
     after: { type: String },

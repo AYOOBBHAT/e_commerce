@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { getSettings, updateSettings } from '@/lib/settings';
+import { validateSettingsUpdate } from '@/lib/settings-validation';
+import { revalidateStorefrontSettings } from '@/lib/revalidate-storefront-settings';
 
 export async function GET() {
   try {
@@ -39,9 +41,24 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    const validation = validateSettingsUpdate(body);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     
     // Update settings: saves to MongoDB (source of truth) and syncs to Redis (fast flag)
     const updatedSettings = await updateSettings(body);
+
+    const affectsStorefront =
+      body.storeName !== undefined ||
+      body.storeEmail !== undefined ||
+      body.storePhone !== undefined ||
+      body.shipping !== undefined;
+
+    if (affectsStorefront) {
+      await revalidateStorefrontSettings();
+    }
     
     // Double-check: Verify maintenance mode is synced to Redis
     if (body.maintenanceMode !== undefined) {

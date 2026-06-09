@@ -3,6 +3,7 @@ import Order from '@/models/Order';
 import { connectToDatabase } from '@/lib/db';
 import { finalizeOrder as finalizePaymentOrder } from '@/lib/finalizePayment';
 import crypto from 'crypto';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 const { StandardCheckoutClient, Env } = require('pg-sdk-node');
 
 const PHONEPE_CLIENT_ID = process.env.PHONEPE_CLIENT_ID;
@@ -153,6 +154,16 @@ async function verifyPaymentWithStatusAPI(client: any, merchantTransactionId: st
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await enforceApiRateLimit(request, {
+      windowMs: 60 * 1000,
+      maxRequests: 120,
+      keyPrefix: 'payments:phonepe:callback',
+      limitHeader: '120',
+      critical: true,
+      fallbackMaxRequests: 30,
+    });
+    if (limited) return limited;
+
     // Get request body as text first for signature validation
     const bodyText = await request.text();
     const body = JSON.parse(bodyText);

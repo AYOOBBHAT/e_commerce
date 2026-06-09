@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import {
-  FOOTER_CONTACT,
+  FOOTER_ADDRESS,
   FOOTER_POLICY_LINKS,
   FOOTER_QUICK_LINKS,
 } from '@/lib/footer-content'
@@ -17,6 +17,8 @@ import type { NavCategory } from '@/lib/category-types'
 
 type FooterMobileNavProps = {
   navCategories: NavCategory[]
+  storeEmail: string
+  storePhone: string
 }
 
 const linkClass =
@@ -25,7 +27,11 @@ const linkClass =
 const triggerClass =
   'py-3.5 text-sm font-semibold text-stone-100 hover:no-underline [&[data-state=open]>svg]:text-[#B87333]'
 
-export default function FooterMobileNav({ navCategories }: FooterMobileNavProps) {
+export default function FooterMobileNav({
+  navCategories,
+  storeEmail,
+  storePhone,
+}: FooterMobileNavProps) {
   return (
     <Accordion
       type="single"
@@ -94,21 +100,27 @@ export default function FooterMobileNav({ navCategories }: FooterMobileNavProps)
                 className="mt-0.5 h-4 w-4 shrink-0 text-[#B87333]"
                 aria-hidden
               />
-              <span className="leading-relaxed">{FOOTER_CONTACT.address}</span>
+              <span className="leading-relaxed">{FOOTER_ADDRESS}</span>
             </li>
-            <li className="flex gap-2.5">
-              <Phone className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
-              <span>{FOOTER_CONTACT.phones.join(', ')}</span>
-            </li>
-            <li className="flex gap-2.5">
-              <Mail className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
-              <a
-                href={`mailto:${FOOTER_CONTACT.email}`}
-                className="break-all hover:text-[#B87333]"
-              >
-                {FOOTER_CONTACT.email}
-              </a>
-            </li>
+            {storePhone ? (
+              <li className="flex gap-2.5">
+                <Phone className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
+                <a href={`tel:${storePhone.replace(/\s/g, '')}`} className="hover:text-[#B87333]">
+                  {storePhone}
+                </a>
+              </li>
+            ) : null}
+            {storeEmail ? (
+              <li className="flex gap-2.5">
+                <Mail className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
+                <a
+                  href={`mailto:${storeEmail}`}
+                  className="break-all hover:text-[#B87333]"
+                >
+                  {storeEmail}
+                </a>
+              </li>
+            ) : null}
           </ul>
         </AccordionContent>
       </AccordionItem>

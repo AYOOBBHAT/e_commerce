@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 
 type CartStickyBarProps = {
   itemsCount: number
-  subtotal: number
+  orderTotal: number
   checkoutBlocked?: boolean
 }
 
 export default function CartStickyBar({
   itemsCount,
-  subtotal,
+  orderTotal,
   checkoutBlocked = false,
 }: CartStickyBarProps) {
   return (
@@ -20,10 +20,10 @@ export default function CartStickyBar({
       <div className="mx-auto flex max-w-lg items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-medium uppercase tracking-wide text-stone-500">
-            {itemsCount} item{itemsCount === 1 ? '' : 's'} · Subtotal
+            {itemsCount} item{itemsCount === 1 ? '' : 's'} · Total
           </p>
           <p className="text-lg font-bold text-stone-900">
-            ₹{subtotal.toLocaleString('en-IN')}
+            ₹{orderTotal.toLocaleString('en-IN')}
           </p>
         </div>
         {checkoutBlocked ? (

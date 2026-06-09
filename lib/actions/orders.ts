@@ -3,46 +3,21 @@
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import { getServerSession } from '@/lib/auth';
-import { getRedisClient } from '@/lib/redis';
 import { generateIdempotencyKey } from '@/lib/utils/idempotency';
 import { normalizeOrderItemPayload } from '@/lib/cart/identity';
 import {
   decrementInventoryForOrderItems,
   validateOrderFromClient,
 } from '@/lib/cart/validation.server';
+import {
+  claimIdempotencyKey,
+  finalizeIdempotencyKey,
+  releaseIdempotencyKey,
+  findOrderByIdempotencyKey,
+  isDuplicateKeyError,
+} from '@/lib/orders/idempotency';
 import crypto from 'crypto';
 
-// Idempotency helper - prevents duplicate orders
-export async function checkIdempotency(idempotencyKey: string): Promise<string | null> {
-  const redis = getRedisClient();
-  if (!redis) return null;
-
-  try {
-    const existingRaw = await redis.get(`idempotency:order:${idempotencyKey}`);
-    const existing = typeof existingRaw === 'string' ? existingRaw : null;
-    if (existing) {
-      return existing; // Return existing order ID
-    }
-  } catch (error) {
-    console.error('[Orders] Idempotency check error:', error);
-  }
-
-  return null;
-}
-
-export async function storeIdempotency(idempotencyKey: string, orderId: string, ttl: number = 3600): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
-  try {
-    // Use set with ex option for expiration (Upstash Redis REST API)
-    await redis.set(`idempotency:order:${idempotencyKey}`, orderId, { ex: ttl });
-  } catch (error) {
-    console.error('[Orders] Idempotency store error:', error);
-  }
-}
-
-// Create order with idempotency
 export async function createOrder(data: {
   name: string;
   email: string;
@@ -62,7 +37,6 @@ export async function createOrder(data: {
   total: number;
   idempotencyKey?: string;
 }) {
-  // Validate payment method is enabled (before any database operations)
   const { getSettings } = await import('@/lib/settings');
   const settings = await getSettings();
   if (!settings.paymentMethods[data.paymentMethod]) {
@@ -71,30 +45,12 @@ export async function createOrder(data: {
 
   await connectToDatabase();
 
-  // Generate idempotency key if not provided
   const idempotencyKey = data.idempotencyKey || generateIdempotencyKey({
     items: data.items,
     total: data.total,
     email: data.email,
     phone: data.phone,
   });
-
-  // Check if this request was already processed
-  const existingOrderId = await checkIdempotency(idempotencyKey);
-  if (existingOrderId) {
-    const existingOrder = await Order.findById(existingOrderId);
-    if (existingOrder) {
-      return {
-        success: true,
-        orderId: existingOrder.orderId,
-        id: existingOrder._id.toString(),
-        fromCache: true,
-      };
-    }
-  }
-
-  // Generate unique order ID
-  const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 
   const normalizedItems = (data.items || [])
     .map((item) => normalizeOrderItemPayload(item))
@@ -106,50 +62,100 @@ export async function createOrder(data: {
   );
 
   const orderItems = validatedOrder.orderItems;
+  const validatedSubtotal = validatedOrder.subtotal;
   const validatedTotal = validatedOrder.total;
 
-  if (data.paymentMethod === 'cod') {
-    try {
-      await decrementInventoryForOrderItems(orderItems);
-    } catch (invErr: any) {
-      throw new Error(invErr?.message || 'Insufficient stock for one or more items.');
-    }
+  const claim = await claimIdempotencyKey(idempotencyKey);
+  if (claim.status === 'existing') {
+    return {
+      success: true,
+      orderId: claim.orderId,
+      id: claim.mongoId,
+      fromCache: true,
+    };
+  }
+  if (claim.status === 'pending') {
+    throw new Error('Order request already in progress. Please wait and retry.');
   }
 
-  const status = 'pending';
-  const paymentStatus = data.paymentMethod === 'cod' ? 'pending' : 'processing';
-  const session = await getServerSession();
-  const shippingAddressValue = typeof data.address === 'string' ? { raw: data.address } : data.address;
+  const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+  let claimHeld = true;
 
-  const orderPayload: any = {
-    orderId,
-    user: session?.userId || undefined,
-    customer: session?.userId ? undefined : { name: data.name, email: data.email, phone: data.phone },
-    shippingAddress: shippingAddressValue,
-    items: orderItems,
-    orderItems,
-    total: validatedTotal,
-    totalPrice: validatedTotal,
-    paymentMethod: data.paymentMethod,
-    paymentStatus,
-    paymentInfo: {
-      method: data.paymentMethod,
-      status: 'pending',
-    },
-    status,
-    inventoryAdjusted: data.paymentMethod === 'cod',
-  };
+  try {
+    if (data.paymentMethod === 'cod') {
+      try {
+        await decrementInventoryForOrderItems(orderItems);
+      } catch (invErr: any) {
+        await releaseIdempotencyKey(idempotencyKey);
+        claimHeld = false;
+        throw new Error(invErr?.message || 'Insufficient stock for one or more items.');
+      }
+    }
 
-  const order = await Order.create(orderPayload);
-  
-  // Store idempotency key
-  await storeIdempotency(idempotencyKey, order._id.toString());
+    const status = 'pending';
+    const paymentStatus = data.paymentMethod === 'cod' ? 'pending' : 'processing';
+    const session = await getServerSession();
+    const shippingAddressValue = typeof data.address === 'string' ? { raw: data.address } : data.address;
 
-  return {
-    success: true,
-    orderId: order.orderId || orderId,
-    id: order._id.toString(),
-    fromCache: false,
-  };
+    const orderPayload: any = {
+      orderId,
+      idempotencyKey,
+      user: session?.userId || undefined,
+      customer: session?.userId ? undefined : { name: data.name, email: data.email, phone: data.phone },
+      shippingAddress: shippingAddressValue,
+      items: orderItems,
+      orderItems,
+      subtotal: validatedSubtotal,
+      shippingAmount: validatedOrder.shippingAmount,
+      freeShippingApplied: validatedOrder.freeShippingApplied,
+      shippingThresholdUsed: validatedOrder.shippingThresholdUsed,
+      total: validatedTotal,
+      totalPrice: validatedTotal,
+      paymentMethod: data.paymentMethod,
+      paymentStatus,
+      paymentInfo: {
+        method: data.paymentMethod,
+        status: 'pending',
+      },
+      status,
+      inventoryAdjusted: data.paymentMethod === 'cod',
+    };
+
+    let order;
+    try {
+      order = await Order.create(orderPayload);
+    } catch (createErr) {
+      if (isDuplicateKeyError(createErr)) {
+        const existing = await findOrderByIdempotencyKey(idempotencyKey);
+        if (existing) {
+          await finalizeIdempotencyKey(idempotencyKey, existing._id.toString());
+          claimHeld = false;
+          return {
+            success: true,
+            orderId: existing.orderId || existing._id.toString(),
+            id: existing._id.toString(),
+            fromCache: true,
+          };
+        }
+      }
+      await releaseIdempotencyKey(idempotencyKey);
+      claimHeld = false;
+      throw createErr;
+    }
+
+    await finalizeIdempotencyKey(idempotencyKey, order._id.toString());
+    claimHeld = false;
+
+    return {
+      success: true,
+      orderId: order.orderId || orderId,
+      id: order._id.toString(),
+      fromCache: false,
+    };
+  } catch (error) {
+    if (claimHeld) {
+      await releaseIdempotencyKey(idempotencyKey);
+    }
+    throw error;
+  }
 }
-

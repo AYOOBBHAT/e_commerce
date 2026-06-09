@@ -1,5 +1,4 @@
 import { CHECKOUT_PAYMENT_UI } from '@/lib/checkout-content'
-import { FOOTER_CONTACT } from '@/lib/footer-content'
 
 export type OrderPaymentDisplay = 'paid' | 'pay_on_delivery' | 'payment_processing'
 
@@ -72,18 +71,21 @@ export function formatShippingAddressForDisplay(
   return parts.length > 0 ? parts.join(', ') : null
 }
 
-export function buildWhatsAppSupportUrl(orderReference: string): string {
-  const phone = FOOTER_CONTACT.phones[0]?.replace(/\D/g, '') || '919469030389'
+export function buildWhatsAppSupportUrl(
+  orderReference: string,
+  storePhone: string,
+): string {
+  const phone = storePhone.replace(/\D/g, '')
+  if (!phone) return '#'
   const text = `Hi, I need help with my order ${orderReference}.`
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
 }
 
-export function buildEmailSupportUrl(orderReference: string): string {
+export function buildEmailSupportUrl(
+  orderReference: string,
+  storeEmail: string,
+): string {
+  if (!storeEmail) return '#'
   const subject = `Order help — ${orderReference}`
-  return `mailto:${FOOTER_CONTACT.email}?subject=${encodeURIComponent(subject)}`
+  return `mailto:${storeEmail}?subject=${encodeURIComponent(subject)}`
 }
-
-export const ORDER_SUCCESS_SUPPORT = {
-  email: FOOTER_CONTACT.email,
-  whatsAppPhones: FOOTER_CONTACT.phones,
-} as const

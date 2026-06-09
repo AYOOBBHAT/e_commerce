@@ -29,6 +29,10 @@ export interface IOrder extends Document {
   shippingAddress: any;
   paymentInfo: IPaymentInfo;
   totalPrice: number;
+  subtotal?: number;
+  shippingAmount?: number;
+  freeShippingApplied?: boolean;
+  shippingThresholdUsed?: number;
   status: 'pending' | 'processing' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   // Final order bookkeeping
   paidAt?: Date;
@@ -39,6 +43,7 @@ export interface IOrder extends Document {
   inventoryFailureReason?: string;
   finalSnapshot?: any;
   isProductionTest?: boolean;
+  idempotencyKey?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +78,7 @@ const orderSchema = new Schema<IOrder>(
     inventoryFailureReason: { type: String },
     finalSnapshot: { type: Object },
     isProductionTest: { type: Boolean, default: false },
+    idempotencyKey: { type: String, unique: true, sparse: true, index: true },
     // Guest customer contact information (if user is not logged in)
     customer: {
       name: { type: String },
@@ -80,7 +86,11 @@ const orderSchema = new Schema<IOrder>(
       phone: { type: String },
     },
     totalPrice: { type: Number, required: true },
-    status: { 
+    subtotal: { type: Number },
+    shippingAmount: { type: Number, default: 0 },
+    freeShippingApplied: { type: Boolean, default: false },
+    shippingThresholdUsed: { type: Number, default: 0 },
+    status: {
       type: String, 
       enum: ['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled'], 
       default: 'pending' 

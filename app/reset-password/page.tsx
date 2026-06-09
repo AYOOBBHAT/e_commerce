@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { SITE_NAME } from '@/lib/constants';
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider';
 
 const resetPasswordSchema = z
   .object({
@@ -39,6 +39,7 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { storeName } = useStorefrontSettings();
   
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -86,7 +87,7 @@ export default function ResetPassword() {
         <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
           <KeyRound className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold">{SITE_NAME}</h1>
+        <h1 className="text-2xl font-bold">{storeName}</h1>
         <p className="text-sm text-muted-foreground mt-1">Reset your password</p>
       </div>
       

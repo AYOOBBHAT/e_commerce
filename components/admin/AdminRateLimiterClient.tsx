@@ -9,6 +9,11 @@ export default function AdminRateLimiterClient() {
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [cursor, setCursor] = useState<string>('0');
   const [hasMore, setHasMore] = useState<boolean>(false);
+  const [redisHealth, setRedisHealth] = useState<{
+    configured: boolean;
+    connected: boolean;
+    mode: 'redis' | 'fallback';
+  } | null>(null);
 
   async function fetchKeys(reset = true) {
     setLoading(true);
@@ -30,6 +35,7 @@ export default function AdminRateLimiterClient() {
       }
       setCursor(data.nextCursor || '0');
       setHasMore((data.nextCursor || '0') !== '0');
+      if (data.redis) setRedisHealth(data.redis);
     } catch (err: any) {
       setError(err?.message || 'Failed to fetch');
     } finally {
@@ -60,6 +66,27 @@ export default function AdminRateLimiterClient() {
 
   return (
     <div className="border rounded p-4">
+      {redisHealth && (
+        <div
+          className={`mb-4 rounded p-3 text-sm ${
+            redisHealth.connected
+              ? 'bg-green-50 text-green-800 border border-green-200'
+              : 'bg-amber-50 text-amber-800 border border-amber-200'
+          }`}
+        >
+          {redisHealth.connected ? (
+            <>
+              <strong>✓ Redis Connected</strong>
+              <div className="mt-1">Distributed rate limiting active</div>
+            </>
+          ) : (
+            <>
+              <strong>⚠ Redis Offline</strong>
+              <div className="mt-1">Using local fallback limiter</div>
+            </>
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-4">
         <label className="text-sm">Category:</label>
         <select value={category} onChange={(e) => setCategory(e.target.value || undefined)} className="px-2 py-1 border rounded">

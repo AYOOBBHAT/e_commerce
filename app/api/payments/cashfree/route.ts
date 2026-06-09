@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { resolveOrderPaymentAmount } from '@/lib/orders/payment-amount';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
@@ -12,7 +14,28 @@ const BASE_URL = process.env.CASHFREE_BASE_URL ||
 
 export async function POST(req: Request) {
   try {
+    const limited = await enforceApiRateLimit(req, {
+      windowMs: 60 * 1000,
+      maxRequests: 15,
+      keyPrefix: 'payments:cashfree:initiate',
+      limitHeader: '15',
+      critical: true,
+      fallbackMaxRequests: 5,
+    });
+    if (limited) return limited;
+
     const { amount, orderId, redirectUrl, customerDetails } = await req.json();
+
+    if (!orderId) {
+      return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
+    }
+
+    const paymentAmount = await resolveOrderPaymentAmount(String(orderId), amount);
+    if (!paymentAmount.ok) {
+      return NextResponse.json({ error: paymentAmount.error }, { status: paymentAmount.status });
+    }
+
+    const orderAmount = paymentAmount.amount;
     const isDummy = !CASHFREE_APP_ID || CASHFREE_APP_ID === 'placeholder' || 
                    !CASHFREE_SECRET_KEY || CASHFREE_SECRET_KEY === 'placeholder';
 
@@ -22,7 +45,7 @@ export async function POST(req: Request) {
         order_id: orderId,
         payment_session_id: `session_${Date.now()}`,
         payment_link: `${redirectUrl}?test=true&order_id=${orderId}`,
-        amount: amount,
+        amount: orderAmount,
         status: 'created',
         testMode: true
       });
@@ -31,7 +54,7 @@ export async function POST(req: Request) {
     // Prepare order payload for Cashfree
     const orderPayload = {
       order_id: orderId,
-      order_amount: amount,
+      order_amount: orderAmount,
       order_currency: 'INR',
       customer_details: {
         customer_id: customerDetails?.customer_id || orderId,

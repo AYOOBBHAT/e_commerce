@@ -2,11 +2,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
-import { SITE_NAME } from '@/lib/constants'
 import type { NavCategory } from '@/lib/category-types'
 import {
+  FOOTER_ADDRESS,
   FOOTER_BRAND_TAGLINE,
-  FOOTER_CONTACT,
   FOOTER_POLICY_LINKS,
   FOOTER_QUICK_LINKS,
   FOOTER_SOCIAL,
@@ -15,6 +14,9 @@ import FooterMobileNav from '@/components/layouts/FooterMobileNav'
 
 type FooterProps = {
   navCategories: NavCategory[]
+  storeName: string
+  storeEmail: string
+  storePhone: string
 }
 
 const desktopLinkClass =
@@ -48,7 +50,13 @@ function FooterSocial() {
   )
 }
 
-function FooterBrand({ compact = false }: { compact?: boolean }) {
+function FooterBrand({
+  storeName,
+  compact = false,
+}: {
+  storeName: string
+  compact?: boolean
+}) {
   return (
     <div className={compact ? 'mb-4' : undefined}>
       <Link
@@ -58,14 +66,14 @@ function FooterBrand({ compact = false }: { compact?: boolean }) {
         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-white">
           <Image
             src="https://res.cloudinary.com/dfocwbzzo/image/upload/v1763995872/ZESCOH_LOGO_o7pz0s.jpg"
-            alt="ZeeShaEla & Co. logo"
+            alt={`${storeName} logo`}
             fill
             sizes="32px"
             className="object-cover"
           />
         </div>
         <span className="text-base font-semibold text-stone-50 sm:text-lg">
-          {SITE_NAME}
+          {storeName}
         </span>
       </Link>
       <p
@@ -82,22 +90,29 @@ function FooterBrand({ compact = false }: { compact?: boolean }) {
   )
 }
 
-export default function Footer({ navCategories }: FooterProps) {
+export default function Footer({
+  navCategories,
+  storeName,
+  storeEmail,
+  storePhone,
+}: FooterProps) {
   const currentYear = new Date().getFullYear()
 
   return (
     <footer className="border-t border-stone-800 bg-stone-950 text-stone-300">
       <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-12">
-        {/* Mobile / tablet — compact brand + accordions */}
         <div className="lg:hidden">
-          <FooterBrand compact />
-          <FooterMobileNav navCategories={navCategories} />
+          <FooterBrand storeName={storeName} compact />
+          <FooterMobileNav
+            navCategories={navCategories}
+            storeEmail={storeEmail}
+            storePhone={storePhone}
+          />
         </div>
 
-        {/* Desktop — expanded columns */}
         <div className="hidden lg:grid lg:grid-cols-5 lg:gap-8">
           <div>
-            <FooterBrand />
+            <FooterBrand storeName={storeName} />
           </div>
 
           <div>
@@ -158,28 +173,34 @@ export default function Footer({ navCategories }: FooterProps) {
                   className="mt-0.5 h-4 w-4 shrink-0 text-[#B87333]"
                   aria-hidden
                 />
-                <span className="leading-relaxed">{FOOTER_CONTACT.address}</span>
+                <span className="leading-relaxed">{FOOTER_ADDRESS}</span>
               </li>
-              <li className="flex gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
-                <span>{FOOTER_CONTACT.phones.join(', ')}</span>
-              </li>
-              <li className="flex gap-2.5">
-                <Mail className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
-                <a
-                  href={`mailto:${FOOTER_CONTACT.email}`}
-                  className="break-all hover:text-[#B87333]"
-                >
-                  {FOOTER_CONTACT.email}
-                </a>
-              </li>
+              {storePhone ? (
+                <li className="flex gap-2.5">
+                  <Phone className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
+                  <a href={`tel:${storePhone.replace(/\s/g, '')}`} className="hover:text-[#B87333]">
+                    {storePhone}
+                  </a>
+                </li>
+              ) : null}
+              {storeEmail ? (
+                <li className="flex gap-2.5">
+                  <Mail className="h-4 w-4 shrink-0 text-[#B87333]" aria-hidden />
+                  <a
+                    href={`mailto:${storeEmail}`}
+                    className="break-all hover:text-[#B87333]"
+                  >
+                    {storeEmail}
+                  </a>
+                </li>
+              ) : null}
             </ul>
           </div>
         </div>
 
         <div className="mt-6 border-t border-stone-800 pt-5 text-center text-xs text-stone-500 lg:mt-10 lg:pt-8 lg:text-sm">
           <p>
-            &copy; {currentYear} {SITE_NAME}. All rights reserved.
+            &copy; {currentYear} {storeName}. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
-import { getServerSession } from '@/lib/auth';
+import { requireAdminFromDb } from '@/lib/admin/users-access';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectToDatabase();
-    const session = await getServerSession();
-    if (!session?.userId || session.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) return auth.response;
 
     const orders = await Order.find({ user: params.id }).sort({ createdAt: -1 });
     return NextResponse.json(orders);
@@ -27,4 +20,3 @@ export async function GET(
     );
   }
 }
-

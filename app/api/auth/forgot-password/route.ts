@@ -6,12 +6,19 @@ import OTP from "@/models/OTP";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/db";
 import { z } from "zod";
+import { getClientIp } from '@/lib/client-ip';
+import {
+  isBlockedScope,
+  recordScopeAttempt,
+} from '@/lib/rateLimiter';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+
   try {
     await connectToDatabase();
     
@@ -19,6 +26,7 @@ export async function POST(request: NextRequest) {
     const validation = forgotPasswordSchema.safeParse(body);
     
     if (!validation.success) {
+      await recordScopeAttempt('forgot', ip);
       return NextResponse.json(
         { error: validation.error.errors[0].message },
         { status: 400 }
@@ -26,11 +34,18 @@ export async function POST(request: NextRequest) {
     }
     
     const { email } = validation.data;
+
+    if (await isBlockedScope('forgot', ip, email)) {
+      return NextResponse.json(
+        { error: 'Too many password reset requests. Please try again later.' },
+        { status: 429 },
+      );
+    }
     
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal if email exists or not for security
+      await recordScopeAttempt('forgot', ip, email);
       return NextResponse.json({
         message: 'If an account with that email exists, we have sent a password reset code.'
       });
@@ -100,12 +115,19 @@ export async function POST(request: NextRequest) {
     
     // Send email
     await transporter.sendMail(mailOptions);
+
+    await recordScopeAttempt('forgot', ip, email);
     
     return NextResponse.json({
       message: 'If an account with that email exists, we have sent a password reset code.'
     });
   } catch (error) {
     console.error('Forgot password error:', error);
+    try {
+      await recordScopeAttempt('forgot', ip);
+    } catch (e) {
+      console.warn('[forgot-password] rate limit record failed', e);
+    }
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }

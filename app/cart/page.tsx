@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useCart } from '@/components/CartProvider';
 import CartStickyBar from '@/components/cart/CartStickyBar';
 import Image from 'next/image';
@@ -17,8 +18,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { ORDER_SHIPPING_DISPLAY } from '@/lib/checkout-content';
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider';
 import { PRODUCT_FALLBACK_IMAGE } from '@/lib/constants';
+import { getShippingDisplay } from '@/lib/shipping';
 
 function formatInr(value: number) {
   return value.toLocaleString('en-IN');
@@ -65,6 +67,12 @@ function CartSummary({
   subtotal: number;
   checkoutBlocked: boolean;
 }) {
+  const { shipping } = useStorefrontSettings();
+  const quote = useMemo(
+    () => getShippingDisplay(subtotal, shipping),
+    [subtotal, shipping],
+  );
+
   return (
     <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm shadow-stone-900/[0.03]">
       <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-stone-500">
@@ -78,16 +86,21 @@ function CartSummary({
         </div>
         <div className="flex justify-between text-stone-600">
           <span>Shipping</span>
-          <span className="text-stone-500">{ORDER_SHIPPING_DISPLAY.lineLabel}</span>
+          <span
+            className={
+              quote.freeShippingApplied
+                ? 'font-medium text-[#B87333]'
+                : 'font-medium text-stone-900'
+            }
+          >
+            {quote.shippingLabel}
+          </span>
         </div>
-        <p className="text-xs leading-relaxed text-stone-500">
-          {ORDER_SHIPPING_DISPLAY.summaryNote}
-        </p>
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-4">
-        <span className="text-base font-semibold text-stone-900">Item total</span>
-        <span className="text-xl font-bold text-stone-900">₹{formatInr(subtotal)}</span>
+        <span className="text-base font-semibold text-stone-900">Total</span>
+        <span className="text-xl font-bold text-stone-900">₹{formatInr(quote.orderTotal)}</span>
       </div>
 
       {checkoutBlocked ? (
@@ -119,7 +132,12 @@ export default function CartPage() {
     removedItemsNotice,
     itemsMeta,
   } = useCart();
+  const { shipping } = useStorefrontSettings();
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const quote = useMemo(
+    () => getShippingDisplay(subtotal, shipping),
+    [subtotal, shipping],
+  );
   const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (!cartReady) {
@@ -257,9 +275,22 @@ export default function CartPage() {
             <span>Subtotal ({itemsCount} items)</span>
             <span className="font-semibold text-stone-900">₹{formatInr(subtotal)}</span>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-stone-500">
-            {ORDER_SHIPPING_DISPLAY.summaryNote}
-          </p>
+          <div className="mt-2 flex justify-between text-stone-600">
+            <span>Shipping</span>
+            <span
+              className={
+                quote.freeShippingApplied
+                  ? 'font-semibold text-[#B87333]'
+                  : 'font-semibold text-stone-900'
+              }
+            >
+              {quote.shippingLabel}
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between border-t border-stone-100 pt-2 font-semibold text-stone-900">
+            <span>Total</span>
+            <span>₹{formatInr(quote.orderTotal)}</span>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-6 md:mt-10 md:grid-cols-[1.2fr_0.8fr]">
@@ -322,7 +353,7 @@ export default function CartPage() {
 
       <CartStickyBar
         itemsCount={itemsCount}
-        subtotal={subtotal}
+        orderTotal={quote.orderTotal}
         checkoutBlocked={checkoutBlocked}
       />
     </div>

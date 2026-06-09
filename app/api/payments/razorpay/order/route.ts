@@ -1,26 +1,45 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { resolveOrderPaymentAmount } from '@/lib/orders/payment-amount';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 
 const KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
 
 export async function POST(req: Request) {
   try {
+    const limited = await enforceApiRateLimit(req, {
+      windowMs: 60 * 1000,
+      maxRequests: 15,
+      keyPrefix: 'payments:razorpay:order',
+      limitHeader: '15',
+      critical: true,
+      fallbackMaxRequests: 5,
+    });
+    if (limited) return limited;
+
     const body = await req.json();
     const { amount, currency = 'INR', receipt } = body;
-    if (!amount || isNaN(Number(amount))) {
-      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    if (!receipt) {
+      return NextResponse.json({ error: 'Missing order reference' }, { status: 400 });
     }
+
+    const paymentAmount = await resolveOrderPaymentAmount(String(receipt), amount);
+    if (!paymentAmount.ok) {
+      return NextResponse.json({ error: paymentAmount.error }, { status: paymentAmount.status });
+    }
+
+    const orderAmount = paymentAmount.amount;
 
     if (!KEY_ID || !KEY_SECRET) {
       console.warn('[razorpay][order] missing keys, returning dummy order for local dev');
       // Return minimal fake order to allow frontend flows in dev
-      return NextResponse.json({ id: `order_fake_${Date.now()}`, amount: Math.round(Number(amount) * 100), currency });
+      return NextResponse.json({ id: `order_fake_${Date.now()}`, amount: Math.round(orderAmount * 100), currency });
     }
 
     const rzp = new Razorpay({ key_id: String(KEY_ID), key_secret: String(KEY_SECRET) });
     const options = {
-      amount: Math.round(Number(amount) * 100), // amount in paise
+      amount: Math.round(orderAmount * 100), // amount in paise
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
       payment_capture: 1,

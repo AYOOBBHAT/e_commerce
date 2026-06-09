@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/db';
+import { NextResponse } from 'next/server';
 import User from '@/models/User';
-import { getServerSession } from '@/lib/auth';
+import { requireAdminFromDb } from '@/lib/admin/users-access';
 
 export async function GET() {
   try {
-    await connectToDatabase();
+    const auth = await requireAdminFromDb();
+    if (!auth.ok) return auth.response;
+
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     return NextResponse.json(users);
   } catch (error) {

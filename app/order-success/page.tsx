@@ -13,11 +13,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/components/SessionProvider'
-import { SITE_NAME } from '@/lib/constants'
+import { useStorefrontSettings } from '@/components/StorefrontSettingsProvider'
 import CheckoutTrustStrip from '@/components/checkout/CheckoutTrustStrip'
 import {
   ORDER_PAYMENT_STATUS,
-  ORDER_SUCCESS_SUPPORT,
   ORDER_WHAT_HAPPENS_NEXT,
   buildEmailSupportUrl,
   buildWhatsAppSupportUrl,
@@ -43,6 +42,10 @@ type PublicOrder = {
   }>
   total?: number
   totalPrice?: number
+  subtotal?: number
+  shippingAmount?: number
+  freeShippingApplied?: boolean
+  shippingThresholdUsed?: number
 }
 
 export default function OrderSuccessPage() {
@@ -50,6 +53,7 @@ export default function OrderSuccessPage() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
   const { user, isLoading: sessionLoading } = useSession()
+  const { storeName, storeEmail, storePhone } = useStorefrontSettings()
   const [order, setOrder] = useState<PublicOrder | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -74,7 +78,15 @@ export default function OrderSuccessPage() {
   }, [orderId])
 
   const items = order?.orderItems || []
-  const total = order?.total ?? order?.totalPrice
+  const itemsSubtotal =
+    order?.subtotal ??
+    items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0,
+    )
+  const shippingAmount = order?.shippingAmount ?? 0
+  const finalTotal = order?.total ?? order?.totalPrice
+  const freeShippingApplied = order?.freeShippingApplied ?? shippingAmount === 0
   const displayOrderId = order?.orderId || orderId || ''
   const paymentMethod = order?.paymentMethod || order?.paymentInfo?.method
   const paymentStatus = order?.paymentInfo?.status
@@ -88,7 +100,7 @@ export default function OrderSuccessPage() {
       ? {
           headline: 'Order confirmed',
           badge: '',
-          message: `Thank you for choosing ${SITE_NAME}. Your order details are loading below.`,
+          message: `Thank you for choosing ${storeName}. Your order details are loading below.`,
         }
       : ORDER_PAYMENT_STATUS[paymentDisplay]
 
@@ -98,12 +110,14 @@ export default function OrderSuccessPage() {
   const showViewOrders = isLoggedInViewer
 
   const whatsAppUrl = displayOrderId
-    ? buildWhatsAppSupportUrl(displayOrderId)
-    : buildWhatsAppSupportUrl('')
+    ? buildWhatsAppSupportUrl(displayOrderId, storePhone)
+    : buildWhatsAppSupportUrl('', storePhone)
 
   const emailSupportUrl = displayOrderId
-    ? buildEmailSupportUrl(displayOrderId)
-    : `mailto:${ORDER_SUCCESS_SUPPORT.email}`
+    ? buildEmailSupportUrl(displayOrderId, storeEmail)
+    : storeEmail
+      ? `mailto:${storeEmail}`
+      : '#'
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] px-4 py-10 sm:py-14">
@@ -114,7 +128,7 @@ export default function OrderSuccessPage() {
           </div>
 
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B87333]">
-            {SITE_NAME}
+            {storeName}
           </p>
           <h1 className="mt-1.5 text-2xl font-bold text-stone-900 sm:text-3xl">
             {statusCopy.headline}
@@ -180,11 +194,36 @@ export default function OrderSuccessPage() {
                     {statusCopy.badge}
                   </dd>
                 </div>
-                {total != null && (
+                <div className="flex justify-between gap-4 border-t border-stone-100 pt-3">
+                  <dt className="text-stone-600">Items total</dt>
+                  <dd className="text-right font-medium text-stone-900">
+                    ₹{Number(itemsSubtotal).toLocaleString('en-IN')}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-stone-600">Shipping</dt>
+                  <dd
+                    className={`text-right font-medium ${
+                      freeShippingApplied ? 'text-[#B87333]' : 'text-stone-900'
+                    }`}
+                  >
+                    {freeShippingApplied && shippingAmount === 0
+                      ? 'FREE'
+                      : `₹${Number(shippingAmount).toLocaleString('en-IN')}`}
+                  </dd>
+                </div>
+                {freeShippingApplied && shippingAmount === 0 && (
+                  <div className="flex justify-end">
+                    <span className="inline-flex rounded-full bg-[#FAF7F2] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#B87333]">
+                      Free shipping applied
+                    </span>
+                  </div>
+                )}
+                {finalTotal != null && (
                   <div className="flex justify-between gap-4 border-t border-stone-100 pt-3">
-                    <dt className="font-semibold text-stone-900">Item total</dt>
+                    <dt className="font-semibold text-stone-900">Final total</dt>
                     <dd className="text-lg font-bold text-stone-900">
-                      ₹{Number(total).toLocaleString('en-IN')}
+                      ₹{Number(finalTotal).toLocaleString('en-IN')}
                     </dd>
                   </div>
                 )}

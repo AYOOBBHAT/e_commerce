@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
+import { resolveOrderPaymentAmount } from '@/lib/orders/payment-amount';
+import { enforceApiRateLimit } from '@/lib/enforce-rate-limit';
 const { StandardCheckoutClient, StandardCheckoutPayRequest, Env } = require('pg-sdk-node');
 
 const PHONEPE_CLIENT_ID = process.env.PHONEPE_CLIENT_ID;
@@ -68,6 +70,16 @@ function getPhonePeClient() {
 
 export async function POST(req: Request) {
   try {
+    const limited = await enforceApiRateLimit(req, {
+      windowMs: 60 * 1000,
+      maxRequests: 15,
+      keyPrefix: 'payments:phonepe:initiate',
+      limitHeader: '15',
+      critical: true,
+      fallbackMaxRequests: 5,
+    });
+    if (limited) return limited;
+
     const body = await req.json();
     console.info('[payments][phonepe] request body=', JSON.stringify(body));
     const { amount, orderId, redirectUrl } = body;
@@ -93,20 +105,13 @@ export async function POST(req: Request) {
       console.warn('[payments][phonepe] missing orderId');
       return NextResponse.json({ error: 'Missing required field: orderId' }, { status: 400 });
     }
-    if (!amount && amount !== 0) {
-      console.warn('[payments][phonepe] missing amount');
-      return NextResponse.json({ error: 'Missing required field: amount' }, { status: 400 });
-    }
-    // Note: redirectUrl is OPTIONAL according to PhonePe documentation for StandardCheckoutPayRequest
-    // It's only required for CreateSdkOrderRequest (mobile SDK orders)
 
-    // Validate and convert amount
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      console.warn('[payments][phonepe] invalid amount:', amount);
-      return NextResponse.json({ error: 'Invalid amount. Must be a positive number.' }, { status: 400 });
+    const paymentAmount = await resolveOrderPaymentAmount(String(orderId), amount);
+    if (!paymentAmount.ok) {
+      return NextResponse.json({ error: paymentAmount.error }, { status: paymentAmount.status });
     }
-    
+
+    const amountNum = paymentAmount.amount;
     const amountPaise = Math.round(amountNum * 100);
     if (amountPaise < 100) {
       return NextResponse.json({ error: 'Minimum amount is 1 INR' }, { status: 400 });
