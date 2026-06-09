@@ -3,8 +3,9 @@
 import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import { getServerSession } from '@/lib/auth';
-import { generateIdempotencyKey } from '@/lib/utils/idempotency';
+import { resolveIdempotencyKey } from '@/lib/utils/idempotency';
 import { normalizeOrderItemPayload } from '@/lib/cart/identity';
+import type { CartItemPayload } from '@/lib/cart/types';
 import {
   decrementInventoryForOrderItems,
   validateOrderFromClient,
@@ -16,13 +17,27 @@ import {
   findOrderByIdempotencyKey,
   isDuplicateKeyError,
 } from '@/lib/orders/idempotency';
+import { buildOrderCreatePayload } from '@/lib/orders/create-payload';
+import { getErrorMessage } from '@/lib/errors/message';
 import crypto from 'crypto';
+
+type CreateOrderAddress =
+  | string
+  | {
+      raw?: string;
+      name?: string;
+      street?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+    };
 
 export async function createOrder(data: {
   name: string;
   email: string;
   phone: string;
-  address: any;
+  address: CreateOrderAddress;
   paymentMethod: string;
   items: Array<{
     id?: string;
@@ -45,25 +60,35 @@ export async function createOrder(data: {
 
   await connectToDatabase();
 
-  const idempotencyKey = data.idempotencyKey || generateIdempotencyKey({
-    items: data.items,
-    total: data.total,
-    email: data.email,
-    phone: data.phone,
-  });
-
   const normalizedItems = (data.items || [])
     .map((item) => normalizeOrderItemPayload(item))
-    .filter(Boolean);
+    .filter((item): item is CartItemPayload => item !== null);
 
   const validatedOrder = await validateOrderFromClient(
-    normalizedItems as any,
+    normalizedItems,
     data.total,
   );
 
   const orderItems = validatedOrder.orderItems;
   const validatedSubtotal = validatedOrder.subtotal;
   const validatedTotal = validatedOrder.total;
+
+  const idempotencyResolution = resolveIdempotencyKey({
+    clientKey: data.idempotencyKey,
+    items: normalizedItems.map((item) => ({
+      id: item.productId || item.id || '',
+      quantity: item.quantity || 0,
+    })),
+    total: validatedTotal,
+    email: data.email,
+    phone: data.phone,
+  });
+
+  if (!idempotencyResolution.ok) {
+    throw new Error(idempotencyResolution.error);
+  }
+
+  const idempotencyKey = idempotencyResolution.key;
 
   const claim = await claimIdempotencyKey(idempotencyKey);
   if (claim.status === 'existing') {
@@ -85,41 +110,38 @@ export async function createOrder(data: {
     if (data.paymentMethod === 'cod') {
       try {
         await decrementInventoryForOrderItems(orderItems);
-      } catch (invErr: any) {
+      } catch (invErr: unknown) {
         await releaseIdempotencyKey(idempotencyKey);
         claimHeld = false;
-        throw new Error(invErr?.message || 'Insufficient stock for one or more items.');
+        throw new Error(
+          getErrorMessage(invErr, 'Insufficient stock for one or more items.'),
+        );
       }
     }
 
-    const status = 'pending';
     const paymentStatus = data.paymentMethod === 'cod' ? 'pending' : 'processing';
     const session = await getServerSession();
-    const shippingAddressValue = typeof data.address === 'string' ? { raw: data.address } : data.address;
+    const shippingAddressValue =
+      typeof data.address === 'string' ? { raw: data.address } : data.address;
 
-    const orderPayload: any = {
+    const orderPayload = buildOrderCreatePayload({
       orderId,
       idempotencyKey,
       user: session?.userId || undefined,
-      customer: session?.userId ? undefined : { name: data.name, email: data.email, phone: data.phone },
+      customer: session?.userId
+        ? undefined
+        : { name: data.name, email: data.email, phone: data.phone },
       shippingAddress: shippingAddressValue,
-      items: orderItems,
       orderItems,
       subtotal: validatedSubtotal,
       shippingAmount: validatedOrder.shippingAmount,
       freeShippingApplied: validatedOrder.freeShippingApplied,
       shippingThresholdUsed: validatedOrder.shippingThresholdUsed,
       total: validatedTotal,
-      totalPrice: validatedTotal,
       paymentMethod: data.paymentMethod,
       paymentStatus,
-      paymentInfo: {
-        method: data.paymentMethod,
-        status: 'pending',
-      },
-      status,
       inventoryAdjusted: data.paymentMethod === 'cod',
-    };
+    });
 
     let order;
     try {

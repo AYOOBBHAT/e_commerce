@@ -4,6 +4,7 @@ import Order from '@/models/Order';
 import { getServerSession } from '@/lib/auth';
 import crypto from 'crypto';
 import { normalizeOrderItemPayload } from '@/lib/cart/identity';
+import type { CartItemPayload } from '@/lib/cart/types';
 import {
   decrementInventoryForOrderItems,
   incrementInventoryForOrderItem,
@@ -19,6 +20,8 @@ import {
   findOrderByIdempotencyKey,
   isDuplicateKeyError,
 } from '@/lib/orders/idempotency';
+import { buildOrderCreatePayload } from '@/lib/orders/create-payload';
+import { getErrorMessage } from '@/lib/errors/message';
 
 function cachedOrderResponse(existing: {
   orderId?: string;
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
   try {
     const { rateLimit, getClientIdentifier } = await import('@/lib/api-rate-limiter');
     const session = await getServerSession();
-    const identifier = getClientIdentifier(request as any, session?.userId);
+    const identifier = getClientIdentifier(request, session?.userId);
 
     const rateLimitResult = await rateLimit(identifier, {
       windowMs: 60 * 1000,
@@ -93,16 +96,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedItems = (items || [])
+    const normalizedItems = (Array.isArray(items) ? items : [])
       .map((item: unknown) => normalizeOrderItemPayload(item))
-      .filter(Boolean);
+      .filter((item): item is CartItemPayload => item !== null);
 
     let validatedOrder;
     try {
-      validatedOrder = await validateOrderFromClient(normalizedItems as any, total);
-    } catch (validationError: any) {
+      validatedOrder = await validateOrderFromClient(normalizedItems, total);
+    } catch (validationError: unknown) {
       return NextResponse.json(
-        { error: validationError?.message || 'Cart validation failed' },
+        { error: getErrorMessage(validationError, 'Cart validation failed') },
         { status: 400 },
       );
     }
@@ -157,45 +160,41 @@ export async function POST(request: NextRequest) {
     if (paymentMethod === 'cod') {
       try {
         codInventoryResults = await decrementInventoryForOrderItems(orderItems);
-      } catch (invErr: any) {
+      } catch (invErr: unknown) {
         console.error('[orders][create] COD inventory decrement failed', invErr);
         await releaseIdempotencyKey(effectiveIdempotencyKey);
         claimHeld = false;
         return NextResponse.json(
-          { error: invErr?.message || 'Insufficient stock for one or more items.' },
+          {
+            error: getErrorMessage(
+              invErr,
+              'Insufficient stock for one or more items.',
+            ),
+          },
           { status: 409 },
         );
       }
     }
 
-    const status = 'pending';
     const paymentStatus = paymentMethod === 'cod' ? 'pending' : 'processing';
-    const paymentInfoStatus = 'pending';
     const shippingAddressValue = typeof address === 'string' ? { raw: address } : address;
 
-    const orderPayload: any = {
+    const orderPayload = buildOrderCreatePayload({
       orderId: merchantOrderId,
       idempotencyKey: effectiveIdempotencyKey,
       user: session?.userId || undefined,
       customer: session?.userId ? undefined : { name, email, phone },
       shippingAddress: shippingAddressValue,
-      items: orderItems,
       orderItems,
       subtotal: validatedSubtotal,
       shippingAmount: validatedOrder.shippingAmount,
       freeShippingApplied: validatedOrder.freeShippingApplied,
       shippingThresholdUsed: validatedOrder.shippingThresholdUsed,
       total: validatedTotal,
-      totalPrice: validatedTotal,
       paymentMethod,
       paymentStatus,
-      paymentInfo: {
-        method: paymentMethod,
-        status: paymentInfoStatus,
-      },
-      status,
       inventoryAdjusted: paymentMethod === 'cod',
-    };
+    });
 
     let order;
     try {
@@ -261,7 +260,7 @@ export async function POST(request: NextRequest) {
         total: validatedTotal,
         paymentMethod,
         address: typeof address === 'string' ? address : JSON.stringify(address),
-        items: orderItems.map((item: any) => ({
+        items: orderItems.map((item) => ({
           name: item.name || '',
           quantity: item.quantity || 0,
           price: item.price || 0,

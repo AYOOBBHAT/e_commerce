@@ -9,12 +9,40 @@ import {
   getMainImageStatusLabel,
   sanitizeProductImageMeta,
   validateFeaturedProduct,
+  type ProductImageMeta,
 } from '@/lib/product-image-quality';
 import {
   buildAdminProductSearchFilter,
   mergeProductFilters,
 } from '@/lib/products/admin-search';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
+
+type CategorySlugLean = {
+  slug: string;
+  name: string;
+};
+
+type AdminProductLean = {
+  _id?: { toString(): string };
+  name?: string;
+  slug?: string;
+  category?: string;
+  images?: string[];
+  imageMeta?: ProductImageMeta[];
+  variants?: unknown[];
+  featured?: boolean;
+  price?: number;
+  quantity?: number;
+  inStock?: boolean;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
+type SerializedAdminProduct = AdminProductLean & {
+  categoryName: string;
+  variantCount: number;
+  mainImageStatus: string;
+};
 
 function requireAdmin(session: Awaited<ReturnType<typeof getServerSession>>) {
   if (!session?.userId) {
@@ -27,7 +55,9 @@ function requireAdmin(session: Awaited<ReturnType<typeof getServerSession>>) {
 }
 
 async function buildCategoryNameMap() {
-  const categories = await Category.find().select('slug name').lean();
+  const categories = await Category.find()
+    .select('slug name')
+    .lean<CategorySlugLean[]>();
   const map = new Map<string, string>(
     categories.map((category) => [category.slug, category.name]),
   );
@@ -41,14 +71,19 @@ async function buildCategoryNameMap() {
   return map;
 }
 
-function serializeAdminProduct(product: any, categoryNameMap: Map<string, string>) {
-  const plain = typeof product.toObject === 'function' ? product.toObject() : product;
-  const categorySlug = plain.category || '';
+function serializeAdminProduct(
+  product: AdminProductLean,
+  categoryNameMap: Map<string, string>,
+): SerializedAdminProduct {
+  const categorySlug = product.category || '';
   return {
-    ...plain,
+    ...product,
     categoryName: categoryNameMap.get(categorySlug) || categorySlug || '—',
-    variantCount: Array.isArray(plain.variants) ? plain.variants.length : 0,
-    mainImageStatus: getMainImageStatusLabel(plain.images || [], plain.imageMeta || []),
+    variantCount: Array.isArray(product.variants) ? product.variants.length : 0,
+    mainImageStatus: getMainImageStatusLabel(
+      product.images || [],
+      product.imageMeta || [],
+    ),
   };
 }
 
@@ -86,7 +121,7 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .lean();
+      .lean<AdminProductLean[]>();
 
     const data = products.map((product) =>
       serializeAdminProduct(product, categoryNameMap),
