@@ -4,10 +4,16 @@ import { findOrderByPublicId } from '@/lib/orders/resolve';
 import { formatShippingAddressForDisplay } from '@/lib/order-success-content';
 import User from '@/models/User';
 
+/** Lean user fields loaded for public order display. */
+type PublicUserLean = {
+  name?: string;
+  email?: string;
+};
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectToDatabase();
-    const order = (await findOrderByPublicId(params.id)) as any;
+    const order = await findOrderByPublicId(params.id);
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
     let customerName: string | undefined = order.customer?.name;
@@ -16,7 +22,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     if (order.user) {
       try {
-        const userDoc = await User.findById(order.user).select('name email').lean();
+        const userDoc = await User.findById(order.user)
+          .select('name email')
+          .lean<PublicUserLean>();
         if (userDoc) {
           customerName = userDoc.name || customerName;
           customerEmail = userDoc.email || customerEmail;
@@ -54,7 +62,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         : undefined,
       hasAccount,
       shippingAddress,
-      orderItems: (order.orderItems || []).map((item: any) => ({
+      orderItems: (order.orderItems || []).map((item) => ({
         name: item.name,
         quantity: item.quantity,
         price: item.price,
