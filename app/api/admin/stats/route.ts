@@ -82,6 +82,14 @@ const getOrderLineItems = (order: StatsOrderLean): StatsOrderLineItem[] =>
 
 const getOrderTotal = (order: StatsOrderLean) => order.totalPrice || order.total || 0;
 
+/** Lean documents may return timestamps as Date or ISO string. */
+const toIsoDateString = (value?: Date | string): string => {
+  if (!value) return new Date().toISOString();
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString();
+  return date.toISOString();
+};
+
 export async function GET() {
   try {
     const session = await getServerSession();
@@ -254,7 +262,7 @@ export async function GET() {
           customer: customerName,
           email: customerEmail,
           total: order.totalPrice || order.total || 0,
-          createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
+          createdAt: toIsoDateString(order.createdAt),
         });
       }
     });
