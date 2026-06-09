@@ -14,15 +14,39 @@ const mapStatusToBucket = (status?: string) => {
   return 'pending';
 };
 
-type AnalyticsOrder = {
+type StatsOrderLineItem = {
+  product?: string | { toString(): string };
+  name?: string;
+  quantity?: number;
+  price?: number;
+};
+
+/** Lean order shape returned by the stats dashboard query. */
+type StatsOrderLean = {
+  _id?: { toString(): string };
+  orderId?: string;
   status?: string;
+  name?: string;
+  email?: string;
   isProductionTest?: boolean;
-  paymentInfo?: { method?: string; status?: string };
-  orderItems?: unknown[];
-  items?: unknown[];
+  paymentInfo?: {
+    method?: string;
+    status?: string;
+  };
+  orderItems?: StatsOrderLineItem[];
+  items?: StatsOrderLineItem[];
   totalPrice?: number;
   total?: number;
   createdAt?: Date | string;
+  user?: { name?: string; email?: string } | null;
+  customer?: {
+    name?: string;
+    email?: string;
+  };
+  shippingAddress?: {
+    name?: string;
+    email?: string;
+  };
 };
 
 /**
@@ -33,7 +57,7 @@ type AnalyticsOrder = {
  * they would inflate revenue and units with orders that never completed as
  * valid business (cancelled, payment failed, unpaid online, or prod-test).
  */
-const isCountableForAnalytics = (order: AnalyticsOrder): boolean => {
+const isCountableForAnalytics = (order: StatsOrderLean): boolean => {
   const status = (order.status || '').toLowerCase();
   if (status === 'cancelled' || status === 'canceled') return false;
   if (order.isProductionTest === true) return false;
@@ -49,14 +73,14 @@ const isCountableForAnalytics = (order: AnalyticsOrder): boolean => {
   return paymentStatus === 'completed';
 };
 
-const getOrderLineItems = (order: AnalyticsOrder) =>
+const getOrderLineItems = (order: StatsOrderLean): StatsOrderLineItem[] =>
   Array.isArray(order.orderItems) && order.orderItems.length
     ? order.orderItems
     : Array.isArray(order.items) && order.items.length
       ? order.items
       : [];
 
-const getOrderTotal = (order: AnalyticsOrder) => order.totalPrice || order.total || 0;
+const getOrderTotal = (order: StatsOrderLean) => order.totalPrice || order.total || 0;
 
 export async function GET() {
   try {
@@ -72,19 +96,17 @@ export async function GET() {
     const CATEGORY_LABELS = await getCategoryNameMap();
 
     const [orders, totalUsers] = await Promise.all([
-      Order.find().populate('user', 'name email').lean(),
+      Order.find().populate('user', 'name email').lean<StatsOrderLean>(),
       User.countDocuments(),
     ]);
 
     const totalOrders = orders.length;
 
     // Revenue, units, and sales charts share one filtered subset of orders.
-    const analyticsOrders = orders.filter((order: AnalyticsOrder) =>
-      isCountableForAnalytics(order)
-    );
+    const analyticsOrders = orders.filter(isCountableForAnalytics);
 
     const totalRevenue = analyticsOrders.reduce(
-      (acc, order: AnalyticsOrder) => acc + getOrderTotal(order),
+      (acc, order) => acc + getOrderTotal(order),
       0
     );
 
@@ -95,8 +117,8 @@ export async function GET() {
       price: number;
     }[] = [];
 
-    analyticsOrders.forEach((order: AnalyticsOrder) => {
-      getOrderLineItems(order).forEach((item: any) => {
+    analyticsOrders.forEach((order) => {
+      getOrderLineItems(order).forEach((item) => {
         orderLineItems.push({
           productId: item.product ? item.product.toString() : undefined,
           name: item.name || 'Unknown product',
@@ -210,7 +232,7 @@ export async function GET() {
     };
 
     const MAX_STATUS_ENTRIES = 5;
-    orders.forEach((order: any) => {
+    orders.forEach((order) => {
       const bucket = mapStatusToBucket(order.status) as keyof typeof orderStatusCounts;
       orderStatusCounts[bucket] += 1;
 
@@ -238,7 +260,7 @@ export async function GET() {
     });
 
     const monthlySalesMap = new Map<string, { name: string; sales: number }>();
-    analyticsOrders.forEach((order: AnalyticsOrder) => {
+    analyticsOrders.forEach((order) => {
       if (!order.createdAt) return;
       const date = new Date(order.createdAt);
       if (Number.isNaN(date.getTime())) return;
