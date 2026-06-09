@@ -1,8 +1,10 @@
-import mongoose from 'mongoose'
+import mongoose, { type HydratedDocument } from 'mongoose'
 import { connectToDatabase } from '@/lib/db'
-import Order from '@/models/Order'
+import Order, { type IOrder } from '@/models/Order'
 
-export async function findOrderByPublicId(id: string) {
+export async function findOrderByPublicId(
+  id: string,
+): Promise<HydratedDocument<IOrder> | null> {
   if (!id?.trim()) return null
   await connectToDatabase()
 

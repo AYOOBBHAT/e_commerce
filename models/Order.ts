@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IAddress } from './User';
 
-interface IOrderItem {
+export interface IOrderItem {
   product?: mongoose.Types.ObjectId;
   name: string;
   quantity: number;
