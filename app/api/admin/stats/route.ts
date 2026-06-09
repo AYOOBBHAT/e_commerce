@@ -6,7 +6,9 @@ import Product from '@/models/Product';
 import { getServerSession } from '@/lib/auth';
 import { getCategoryNameMap } from '@/lib/actions/categories';
 
-const mapStatusToBucket = (status?: string) => {
+type OrderStatusBucket = 'pending' | 'shipped' | 'delivered' | 'cancelled';
+
+const mapStatusToBucket = (status?: string): OrderStatusBucket => {
   const normalized = (status || '').toLowerCase();
   if (normalized === 'shipped') return 'shipped';
   if (normalized === 'delivered') return 'delivered';
@@ -19,6 +21,22 @@ type StatsOrderLineItem = {
   name?: string;
   quantity?: number;
   price?: number;
+};
+
+type StatsProductLean = {
+  _id?: { toString(): string };
+  name?: string;
+  category?: string;
+  quantity?: number;
+  inStock?: boolean;
+};
+
+type StatsProductSummary = {
+  _id: string;
+  name: string;
+  category?: string;
+  quantity?: number;
+  inStock?: boolean;
 };
 
 /** Lean order shape returned by the stats dashboard query. */
@@ -43,10 +61,13 @@ type StatsOrderLean = {
     name?: string;
     email?: string;
   };
-  shippingAddress?: {
-    name?: string;
-    email?: string;
-  };
+  shippingAddress?:
+    | string
+    | {
+        name?: string;
+        email?: string;
+        raw?: string;
+      };
 };
 
 /**
@@ -80,7 +101,10 @@ const getOrderLineItems = (order: StatsOrderLean): StatsOrderLineItem[] =>
       ? order.items
       : [];
 
-const getOrderTotal = (order: StatsOrderLean) => order.totalPrice || order.total || 0;
+const getOrderTotal = (order: StatsOrderLean) => order.totalPrice ?? order.total ?? 0;
+
+const toLeanIdString = (value?: { toString(): string }) =>
+  value ? value.toString() : '';
 
 /** Lean documents may return timestamps as Date or ISO string. */
 const toIsoDateString = (value?: Date | string): string => {
@@ -89,6 +113,44 @@ const toIsoDateString = (value?: Date | string): string => {
   if (Number.isNaN(date.getTime())) return new Date().toISOString();
   return date.toISOString();
 };
+
+const parseLeanDate = (value: Date | string): Date | null => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const shippingAddressField = (
+  address: StatsOrderLean['shippingAddress'],
+  field: 'name' | 'email',
+): string | undefined => {
+  if (!address || typeof address === 'string') return undefined;
+  return address[field];
+};
+
+const resolveCustomerName = (order: StatsOrderLean): string =>
+  order.user?.name ||
+  shippingAddressField(order.shippingAddress, 'name') ||
+  order.customer?.name ||
+  order.name ||
+  'Customer';
+
+const resolveCustomerEmail = (order: StatsOrderLean): string =>
+  order.user?.email ||
+  order.email ||
+  order.customer?.email ||
+  shippingAddressField(order.shippingAddress, 'email') ||
+  '—';
+
+const isNonEmptyString = (value: string | undefined): value is string =>
+  typeof value === 'string' && value.length > 0;
+
+const toProductSummary = (product: StatsProductLean): StatsProductSummary => ({
+  _id: toLeanIdString(product._id),
+  name: product.name || 'Unnamed product',
+  category: product.category,
+  quantity: product.quantity,
+  inStock: product.inStock,
+});
 
 export async function GET() {
   try {
@@ -130,30 +192,27 @@ export async function GET() {
         orderLineItems.push({
           productId: item.product ? item.product.toString() : undefined,
           name: item.name || 'Unknown product',
-          quantity: item.quantity || 0,
-          price: item.price || 0,
+          quantity: item.quantity ?? 0,
+          price: item.price ?? 0,
         });
       });
     });
 
-    const productsSold = orderLineItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const productsSold = orderLineItems.reduce((sum, item) => sum + item.quantity, 0);
 
     const productIds = Array.from(
-      new Set(orderLineItems.map((item) => item.productId).filter(Boolean))
+      new Set(orderLineItems.map((item) => item.productId).filter(isNonEmptyString))
     );
-    const rawProductDocs = productIds.length
+
+    const rawProductDocs: StatsProductLean[] = productIds.length
       ? await Product.find({ _id: { $in: productIds } })
           .select('name category quantity inStock')
-          .lean()
+          .lean<StatsProductLean[]>()
       : [];
-    const productDocs = rawProductDocs.map((product: any) => ({
-      _id: product?._id?.toString?.() ?? '',
-      name: product?.name || 'Unnamed product',
-      category: product?.category,
-      quantity: product?.quantity,
-      inStock: product?.inStock,
-    }));
-    const productMap = productDocs.reduce<Record<string, (typeof productDocs)[number]>>(
+
+    const productDocs = rawProductDocs.map(toProductSummary);
+
+    const productMap = productDocs.reduce<Record<string, StatsProductSummary>>(
       (acc, product) => {
         if (product._id) {
           acc[product._id] = product;
@@ -169,7 +228,7 @@ export async function GET() {
     >();
     orderLineItems.forEach((item) => {
       const key = item.productId || item.name;
-      const productDoc = item.productId ? productMap[item.productId] : null;
+      const productDoc = item.productId ? productMap[item.productId] : undefined;
       const categoryId = productDoc?.category || 'uncategorized';
       const displayCategory = CATEGORY_LABELS[categoryId] || categoryId || 'Uncategorized';
       const existing =
@@ -180,8 +239,8 @@ export async function GET() {
           quantity: 0,
           revenue: 0,
         };
-      existing.quantity += item.quantity || 0;
-      existing.revenue += (item.price || 0) * (item.quantity || 0);
+      existing.quantity += item.quantity;
+      existing.revenue += item.price * item.quantity;
       salesByProductMap.set(key, existing);
     });
 
@@ -213,16 +272,20 @@ export async function GET() {
       .select('name quantity inStock category')
       .sort({ quantity: 1 })
       .limit(5)
-      .lean();
-    const lowStockProducts = rawLowStockProducts.map((product: any) => ({
-      id: product?._id?.toString?.() ?? '',
-      name: product?.name || 'Unnamed product',
-      quantity: product?.quantity ?? 0,
-      inStock: !!product?.inStock,
-      category: CATEGORY_LABELS[product?.category] || product?.category || 'Uncategorized',
-    }));
+      .lean<StatsProductLean[]>();
 
-    const orderStatusCounts = {
+    const lowStockProducts = rawLowStockProducts.map((product) => {
+      const categoryKey = product.category ?? '';
+      return {
+        id: toLeanIdString(product._id),
+        name: product.name || 'Unnamed product',
+        quantity: product.quantity ?? 0,
+        inStock: Boolean(product.inStock),
+        category: CATEGORY_LABELS[categoryKey] || categoryKey || 'Uncategorized',
+      };
+    });
+
+    const orderStatusCounts: Record<OrderStatusBucket, number> = {
       pending: 0,
       shipped: 0,
       delivered: 0,
@@ -230,7 +293,7 @@ export async function GET() {
     };
 
     const ordersByStatus: Record<
-      'pending' | 'shipped' | 'delivered' | 'cancelled',
+      OrderStatusBucket,
       { orderId: string; customer: string; email: string; total: number; createdAt: string }[]
     > = {
       pending: [],
@@ -241,27 +304,15 @@ export async function GET() {
 
     const MAX_STATUS_ENTRIES = 5;
     orders.forEach((order) => {
-      const bucket = mapStatusToBucket(order.status) as keyof typeof orderStatusCounts;
+      const bucket = mapStatusToBucket(order.status);
       orderStatusCounts[bucket] += 1;
 
       if (ordersByStatus[bucket].length < MAX_STATUS_ENTRIES) {
-        const customerName =
-          order.user?.name ||
-          order.shippingAddress?.name ||
-          order.customer?.name ||
-          order.name ||
-          'Customer';
-        const customerEmail =
-          order.user?.email ||
-          order.email ||
-          order.customer?.email ||
-          order.shippingAddress?.email ||
-          '—';
         ordersByStatus[bucket].push({
-          orderId: order.orderId || order._id?.toString() || '',
-          customer: customerName,
-          email: customerEmail,
-          total: order.totalPrice || order.total || 0,
+          orderId: order.orderId || toLeanIdString(order._id),
+          customer: resolveCustomerName(order),
+          email: resolveCustomerEmail(order),
+          total: getOrderTotal(order),
           createdAt: toIsoDateString(order.createdAt),
         });
       }
@@ -270,8 +321,8 @@ export async function GET() {
     const monthlySalesMap = new Map<string, { name: string; sales: number }>();
     analyticsOrders.forEach((order) => {
       if (!order.createdAt) return;
-      const date = new Date(order.createdAt);
-      if (Number.isNaN(date.getTime())) return;
+      const date = parseLeanDate(order.createdAt);
+      if (!date) return;
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
       const existing = monthlySalesMap.get(key) || { name: label, sales: 0 };
